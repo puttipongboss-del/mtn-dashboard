@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MTN Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1923; color: #e0e0e0; min-height: 100vh; }
+
+  #loginPage { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #0f1923, #1a2d3d); }
+  .login-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 40px; width: 360px; text-align: center; }
+  .login-box h2 { color: #4fc3f7; font-size: 24px; margin-bottom: 8px; }
+  .login-box p { color: #888; font-size: 13px; margin-bottom: 28px; }
+  .login-box input { width: 100%; padding: 12px 16px; margin-bottom: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.07); color: #fff; font-size: 14px; }
+  .error-msg { color: #ef5350; font-size: 13px; margin-top: 10px; }
+
+  .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: 0.2s; }
+  .btn-primary   { background: #4fc3f7; color: #0f1923; } .btn-primary:hover   { background: #29b6f6; }
+  .btn-success   { background: #66bb6a; color: #fff; }   .btn-success:hover   { background: #4caf50; }
+  .btn-warning   { background: #ffa726; color: #fff; }   .btn-warning:hover   { background: #fb8c00; }
+  .btn-danger    { background: #ef5350; color: #fff; }   .btn-danger:hover    { background: #e53935; }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: #fff; }
+  .btn-info      { background: #29b6f6; color: #fff; }   .btn-info:hover      { background: #0288d1; }
+  .btn-full { width: 100%; padding: 13px; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+  #app { display: none; }
+  .navbar { background: rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 0 24px; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; }
+  .navbar-brand { color: #4fc3f7; font-weight: 700; font-size: 18px; }
+  .navbar-user { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+  .role-badge { background: #4fc3f7; color: #0f1923; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .btn-logout { background: rgba(239,83,80,0.2); color: #ef5350; border: 1px solid #ef5350; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; }
+
+  .tabs { display: flex; gap: 4px; padding: 16px 24px 0; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); flex-wrap: wrap; }
+  .tab-btn { padding: 10px 20px; border: none; border-radius: 8px 8px 0 0; background: transparent; color: #888; cursor: pointer; font-size: 14px; transition: 0.2s; border-bottom: 2px solid transparent; }
+  .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  .tab-btn.active { color: #4fc3f7; border-bottom: 2px solid #4fc3f7; background: rgba(79,195,247,0.05); }
+
+  .content { padding: 24px; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card-title { font-size: 16px; font-weight: 600; color: #4fc3f7; margin-bottom: 16px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-ready    { background: rgba(102,187,106,0.2); color: #66bb6a; border: 1px solid #66bb6a; }
+  .badge-pending  { background: rgba(255,167,38,0.2);  color: #ffa726; border: 1px solid #ffa726; }
+  .badge-progress { background: rgba(79,195,247,0.2);  color: #4fc3f7; border: 1px solid #4fc3f7; }
+  .badge-pm       { background: rgba(171,71,188,0.2);  color: #ab47bc; border: 1px solid #ab47bc; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: rgba(79,195,247,0.1); color: #4fc3f7; padding: 10px 12px; text-align: left; font-weight: 600; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: middle; }
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 13px; color: #aaa; margin-bottom: 6px; }
+  .form-control { width: 100%; padding: 10px 14px; background: #1e2d3d; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; font-size: 14px; }
+  .form-control:focus { outline: none; border-color: #4fc3f7; }
+  .form-control option { background: #1e2d3d; color: #fff; }
+
+  .stat-box { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
+  .stat-box:hover { background: rgba(255,255,255,0.09); transform: translateY(-2px); }
+  .stat-number { font-size: 36px; font-weight: 700; }
+  .stat-label  { font-size: 12px; color: #888; margin-top: 4px; }
+  .stat-hint   { font-size: 10px; color: #555; margin-top: 4px; }
+
+  .machine-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+  .machine-card:hover { background: rgba(79,195,247,0.08); border-color: rgba(79,195,247,0.3); transform: translateY(-2px); }
+  .machine-card .mc-name { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
+  .machine-card .mc-type { font-size: 11px; color: #888; margin-bottom: 6px; }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal-box { background: #1a2535; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 85vh; overflow-y: auto; }
+  .modal-box-wide { max-width: 720px; }
+  .modal-title { font-size: 18px; font-weight: 700; color: #4fc3f7; margin-bottom: 20px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+  .confirm-box { background: #1a2535; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 32px 28px; width: 100%; max-width: 400px; text-align: center; }
+  .confirm-box p { color: #ccc; margin-bottom: 24px; line-height: 1.7; font-size: 14px; }
+
+  .machine-multi-select { max-height: 200px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px; background: #1e2d3d; }
+  .machine-checkbox { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .machine-checkbox:hover { background: rgba(79,195,247,0.1); }
+  .machine-checkbox input { cursor: pointer; accent-color: #4fc3f7; }
+  .select-all-btn { font-size: 12px; color: #4fc3f7; cursor: pointer; background: none; border: none; padding: 4px 0; margin-bottom: 6px; text-decoration: underline; }
+
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: #888; flex-shrink: 0; }
+  .detail-value { color: #fff; font-weight: 500; text-align: right; max-width: 65%; }
+  .section-title { font-size: 14px; font-weight: 600; color: #4fc3f7; margin: 16px 0 8px; }
+  .plan-confirm-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+
+  .filter-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .filter-clear { font-size: 12px; color: #ef5350; cursor: pointer; background: none; border: 1px solid #ef5350; border-radius: 6px; padding: 4px 10px; }
+
+  /* MONTH SELECTOR */
+  .month-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .month-nav button { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+  .month-nav button:hover { background: rgba(79,195,247,0.15); }
+  .month-nav span { font-size: 15px; font-weight: 600; color: #4fc3f7; min-width: 120px; text-align: center; }
+
+  /* ADMIN TABS */
+  .admin-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .admin-tab-btn { padding: 8px 18px; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; background: transparent; color: #888; cursor: pointer; font-size: 13px; transition: 0.2s; }
+  .admin-tab-btn:hover { color: #fff; border-color: rgba(79,195,247,0.3); }
+  .admin-tab-btn.active { background: rgba(79,195,247,0.1); color: #4fc3f7; border-color: #4fc3f7; }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; }
+
+  /* CHART */
+  .chart-container { position: relative; height: 280px; }
+
+  .loading { text-align: center; color: #888; padding: 40px; }
+  .empty-msg { color: #888; font-size: 13px; padding: 8px 0; }
+  .text-success { color: #66bb6a; }
+  .text-danger  { color: #ef5350; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage">
+  <div class="login-box">
+    <h2>🏭 MTN Dashboard</h2>
+    <p>Maintenance Management System</p>
+    <input type="text"     id="inputUsername" placeholder="Username" />
+    <input type="password" id="inputPassword" placeholder="Password" />
+    <button class="btn btn-primary btn-full" onclick="doLogin()">เข้าสู่ระบบ</button>
+    <div class="error-msg" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="navbar">
+    <div class="navbar-brand">🏭 MTN Dashboard</div>
+    <div class="navbar-user">
+      <span id="navFullname"></span>
+      <span class="role-badge" id="navRole"></span>
+      <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
+    </div>
+  </div>
+  <div class="tabs" id="tabBar"></div>
+  <div class="content">
+
+    <!-- STATUS -->
+    <div class="tab-content active" id="tab-status">
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="stat-box" id="statBoxReady"     onclick="filterMachines('ready')"     style="border-color:#66bb6a22"><div class="stat-number" id="statReady"     style="color:#66bb6a">-</div><div class="stat-label">พร้อมใช้งาน</div><div class="stat-hint">คลิกเพื่อดูรายการ</div></div>
+        <div class="stat-box" id="statBoxPending"   onclick="filterMachines('pending')"   style="border-color:#ffa72622"><div class="stat-number" id="statPending"   style="color:#ffa726">-</div><div class="stat-label">รอซ่อม</div><div class="stat-hint">คลิกเพื่อดูรายการ</div></div>
+        <div class="stat-box" id="statBoxBreakdown" onclick="filterMachines('breakdown')" style="border-color:#ef535022"><div class="stat-number" id="statBreakdown" style="color:#ef5350">-</div><div class="stat-label">Breakdown</div><div class="stat-hint">คลิกเพื่อดูรายการ</div></div>
+        <div class="stat-box" id="statBoxPm"        onclick="filterMachines('pm')"        style="border-color:#ab47bc22"><div class="stat-number" id="statPM"        style="color:#ab47bc">-</div><div class="stat-label">แผน PM</div><div class="stat-hint">คลิกเพื่อดูรายการ</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">สถานะเครื่องจักรทั้งหมด <span style="font-size:12px;color:#888;font-weight:400">— กดที่การ์ดเพื่อดูรายละเอียด</span></div>
+        <div id="filterBar" class="filter-bar" style="display:none">
+          <span id="filterLabel" style="font-size:13px;color:#aaa"></span>
+          <button class="filter-clear" onclick="clearFilter()">✕ แสดงทั้งหมด</button>
+        </div>
+        <div id="machineGrid" class="grid-4"><div class="loading">กำลังโหลด...</div></div>
+      </div>
+    </div>
+
+    <!-- REPAIR -->
+    <div class="tab-content" id="tab-repair">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">📋 แจ้งซ่อมใหม่</div>
+          <div class="form-group"><label>เครื่องที่เสีย</label><select class="form-control" id="repairMachine"></select></div>
+          <div class="form-group"><label>อาการเสีย</label><textarea class="form-control" id="repairSymptom" rows="4" placeholder="อธิบายอาการเสีย..."></textarea></div>
+          <button class="btn btn-danger btn-full" onclick="confirmRepair()">🔴 แจ้งซ่อม</button>
+        </div>
+        <div class="card">
+          <div class="card-title">📊 รายการแจ้งซ่อมของฉัน</div>
+          <div id="myRepairList"><div class="loading">กำลังโหลด...</div></div>
+        </div>
+      </div>
+      <div class="card" id="mtnRepairPanel" style="display:none">
+        <div class="card-title">🔧 งานซ่อมทั้งหมด (MTN)</div>
+        <div id="allRepairList"><div class="loading">กำลังโหลด...</div></div>
+      </div>
+    </div>
+
+    <!-- PM PLAN -->
+    <div class="tab-content" id="tab-pm">
+      <div class="card">
+        <div class="card-title">📅 แผน PM</div>
+        <div class="month-nav">
+          <button onclick="changeMonth(-1)">◀ ก่อนหน้า</button>
+          <span id="pmMonthLabel"></span>
+          <button onclick="changeMonth(1)">ถัดไป ▶</button>
+        </div>
+        <div id="pmCalendar"><div class="loading">กำลังโหลด...</div></div>
+      </div>
+      <div class="card" id="addPMPanel" style="display:none">
+        <div class="card-title">➕ เพิ่มแผน PM (เลือกได้หลายเครื่อง)</div>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>เลือกเครื่อง</label>
+            <button class="select-all-btn" onclick="toggleSelectAll()">☑ เลือกทั้งหมด / ยกเลิก</button>
+            <div class="machine-multi-select" id="pmMachineList"><div class="loading">กำลังโหลด...</div></div>
+          </div>
+          <div>
+            <div class="form-group"><label>วันที่วางแผน</label><input type="date" class="form-control" id="pmDate" /></div>
+            <div class="form-group"><label>ผู้รับผิดชอบ</label><input type="text" class="form-control" id="pmAssignee" placeholder="ชื่อช่าง" /></div>
+            <button class="btn btn-success btn-full" onclick="submitPMPlan()">✅ บันทึกแผน PM</button>
+          </div>
+        </div>
+      </div>
+      <div class="card" id="planningConfirmPanel" style="display:none">
+        <div class="card-title">✅ ยืนยันแผน PM (Planning)</div>
+        <div id="planningConfirmList"><div class="loading">กำลังโหลด...</div></div>
+      </div>
+    </div>
+
+    <!-- HISTORY -->
+    <div class="tab-content" id="tab-history">
+      <div class="card">
+        <div class="card-title">🔍 ค้นหาประวัติ</div>
+        <div class="grid-2">
+          <div class="form-group"><label>เลือกเครื่อง</label><select class="form-control" id="historyMachine"><option value="">-- ทุกเครื่อง --</option></select></div>
+          <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadHistory()" style="width:100%">ค้นหา</button></div>
+        </div>
+      </div>
+      <!-- กราฟ -->
+      <div class="grid-2">
+        <div class="card"><div class="card-title">📊 ยอดซ่อมรายเดือน</div><div class="chart-container"><canvas id="chartRepairCount"></canvas></div></div>
+        <div class="card"><div class="card-title">💰 ค่าซ่อมรายเดือน (บาท)</div><div class="chart-container"><canvas id="chartRepairCost"></canvas></div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card"><div class="card-title">📈 Book Value (ค่าซ่อมสะสม)</div><div id="bookValueList"><div class="loading">กำลังโหลด...</div></div></div>
+        <div class="card"><div class="card-title">🛠️ ประวัติการซ่อม <span style="font-size:12px;color:#888;font-weight:400">— กดแถวเพื่อดูรายละเอียด</span></div><div id="historyList"><div class="loading">กำลังโหลด...</div></div></div>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div class="tab-content" id="tab-admin">
+      <div class="admin-tabs">
+        <button class="admin-tab-btn active" onclick="switchAdminTab('users',this)">👥 จัดการ Users</button>
+        <button class="admin-tab-btn" onclick="switchAdminTab('machines',this)">🏭 จัดการเครื่องจักร</button>
+        <button class="admin-tab-btn" onclick="switchAdminTab('pmadmin',this)">📅 จัดการ PM Plan</button>
+      </div>
+
+      <!-- USERS -->
+      <div class="admin-panel active" id="adminPanel-users">
+        <div class="card">
+          <div class="card-title">➕ เพิ่ม User ใหม่</div>
+          <div class="grid-3">
+            <div class="form-group"><label>Username</label><input type="text" class="form-control" id="newUsername" placeholder="username" /></div>
+            <div class="form-group"><label>Password</label><input type="text" class="form-control" id="newPassword" placeholder="password" /></div>
+            <div class="form-group"><label>Full Name</label><input type="text" class="form-control" id="newFullname" placeholder="ชื่อ-สกุล" /></div>
+            <div class="form-group"><label>Role</label>
+              <select class="form-control" id="newRole">
+                <option value="FOREMAN">FOREMAN</option>
+                <option value="MTN">MTN</option>
+                <option value="PLANNING">PLANNING</option>
+                <option value="ENGINEER">ENGINEER</option>
+                <option value="MANAGER">MANAGER</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Email</label><input type="email" class="form-control" id="newEmail" placeholder="email@example.com" /></div>
+            <div class="form-group"><label>&nbsp;</label><button class="btn btn-success btn-full" onclick="addUser()">➕ เพิ่ม User</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">👥 รายชื่อ Users ทั้งหมด</div>
+          <div id="adminUserList"><div class="loading">กำลังโหลด...</div></div>
+        </div>
+      </div>
+
+      <!-- MACHINES -->
+      <div class="admin-panel" id="adminPanel-machines">
+        <div class="card">
+          <div class="card-title">➕ เพิ่มเครื่องจักรใหม่</div>
+          <div class="grid-3">
+            <div class="form-group"><label>Machine ID</label><input type="text" class="form-control" id="newMachineId" placeholder="MC.43" /></div>
+            <div class="form-group"><label>ชื่อเครื่อง</label><input type="text" class="form-control" id="newMachineName" placeholder="ชื่อเครื่องจักร" /></div>
+            <div class="form-group"><label>Type</label>
+              <select class="form-control" id="newMachineType">
+                <option value="Injection">Injection</option>
+                <option value="Standalone">Standalone</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Group</label><input type="text" class="form-control" id="newMachineGroup" placeholder="G.31A" /></div>
+            <div class="form-group"><label>Install Date</label><input type="date" class="form-control" id="newMachineDate" /></div>
+            <div class="form-group"><label>&nbsp;</label><button class="btn btn-success btn-full" onclick="addMachine()">➕ เพิ่มเครื่อง</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🏭 รายชื่อเครื่องจักรทั้งหมด</div>
+          <div id="adminMachineList"><div class="loading">กำลังโหลด...</div></div>
+        </div>
+      </div>
+
+      <!-- PM ADMIN -->
+      <div class="admin-panel" id="adminPanel-pmadmin">
+        <div class="card">
+          <div class="card-title">📅 จัดการ PM Plan ทั้งหมด</div>
+          <div class="month-nav">
+            <button onclick="changeAdminPMMonth(-1)">◀ ก่อนหน้า</button>
+            <span id="adminPMMonthLabel"></span>
+            <button onclick="changeAdminPMMonth(1)">ถัดไป ▶</button>
+          </div>
+          <div id="adminPMList"><div class="loading">กำลังโหลด...</div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Stat Detail -->
+<div class="modal-overlay" id="statModal">
+  <div class="modal-box modal-box-wide">
+    <div class="modal-title" id="statModalTitle"></div>
+    <div id="statModalBody"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('statModal')">ปิด</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Machine Detail -->
+<div class="modal-overlay" id="machineModal">
+  <div class="modal-box">
+    <div class="modal-title" id="machineModalTitle"></div>
+    <div id="machineModalBody"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('machineModal')">ปิด</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Confirm Repair -->
+<div class="modal-overlay" id="confirmRepairModal">
+  <div class="confirm-box">
+    <div class="modal-title">⚠️ ยืนยันการแจ้งซ่อม</div>
+    <p id="confirmRepairText"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary" onclick="closeModal('confirmRepairModal')">ยกเลิก</button>
+      <button class="btn btn-danger" onclick="submitRepair()">✅ ยืนยัน แจ้งซ่อม</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Repair Update -->
+<div class="modal-overlay" id="repairModal">
+  <div class="modal-box">
+    <div class="modal-title" id="repairModalTitle"></div>
+    <input type="hidden" id="modalRepairId" />
+    <div id="repairModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('repairModal')">ปิด</button>
+      <button class="btn btn-success" id="modalSaveBtn">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Repair Detail (History) -->
+<div class="modal-overlay" id="repairDetailModal">
+  <div class="modal-box">
+    <div class="modal-title" id="repairDetailTitle">รายละเอียดการซ่อม</div>
+    <div id="repairDetailBody"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('repairDetailModal')">ปิด</button></div>
+  </div>
+</div>
+
+<!-- MODAL: Planning Confirm -->
+<div class="modal-overlay" id="planConfirmModal">
+  <div class="confirm-box">
+    <div class="modal-title">✅ ยืนยันแผน PM</div>
+    <p id="planConfirmText"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary" onclick="closeModal('planConfirmModal')">ยกเลิก</button>
+      <button class="btn btn-success" id="planConfirmBtn">✅ ยืนยัน ทำได้ตามกำหนด</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Confirm Delete -->
+<div class="modal-overlay" id="deleteConfirmModal">
+  <div class="confirm-box">
+    <div class="modal-title">🗑️ ยืนยันการลบ</div>
+    <p id="deleteConfirmText"></p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-secondary" onclick="closeModal('deleteConfirmModal')">ยกเลิก</button>
+      <button class="btn btn-danger" id="deleteConfirmBtn">🗑️ ลบ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwvPQOn5kO37bP1R-DMNBNOYZ4Onh1M5uGGtVigO2NzLY-SygOZbCRbi_nLYgH-5mcJ/exec';
+
+let currentUser      = null;
+let machines         = [];
+let repairs          = [];
+let pmPlans          = [];
+let allUsers         = [];
+let machineStatusMap = {};
+let currentFilter    = null;
+let pmViewDate       = new Date();
+let adminPMViewDate  = new Date();
+let chartCount       = null;
+let chartCost        = null;
+
+// ===== LOGIN =====
+async function doLogin() {
+  const username = document.getElementById('inputUsername').value.trim();
+  const password = document.getElementById('inputPassword').value.trim();
+  const errEl    = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!username || !password) { errEl.textContent = 'กรุณากรอก Username และ Password'; return; }
+  try {
+    const res = await api({ action: 'login', username, password });
+    if (res.success) { currentUser = res.user; startApp(); }
+    else errEl.textContent = res.message;
+  } catch(e) { errEl.textContent = 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่'; }
+}
+
+function doLogout() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+}
+
+async function startApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('navFullname').textContent = currentUser.fullname || currentUser.username;
+  document.getElementById('navRole').textContent = currentUser.role;
+  buildTabs();
+  await loadMachines();
+  loadStatus();
+  loadRepairs();
+  loadPMPlan();
+  loadHistory();
+  if (currentUser.role === 'ADMIN') loadAdminUsers();
+  setInterval(() => {
+    const activeTab = document.querySelector('.tab-content.active')?.id?.replace('tab-','');
+    if (activeTab === 'status')  loadStatus();
+    if (activeTab === 'repair')  loadRepairs();
+    if (activeTab === 'pm')      loadPMPlan();
+    if (activeTab === 'history') loadHistory();
+  }, 30000);
+}
+
+// ===== TABS =====
+const TAB_CONFIG = [
+  { id: 'status',  label: '🏭 Status MC',  roles: ['FOREMAN','MTN','PLANNING','ENGINEER','MANAGER','ADMIN'] },
+  { id: 'repair',  label: '🔧 แจ้งซ่อม',   roles: ['FOREMAN','MTN','MANAGER','ADMIN'] },
+  { id: 'pm',      label: '📅 PM Plan',    roles: ['MTN','PLANNING','ENGINEER','MANAGER','ADMIN'] },
+  { id: 'history', label: '📋 History MC', roles: ['MTN','ENGINEER','MANAGER','ADMIN'] },
+  { id: 'admin',   label: '⚙️ Admin',      roles: ['ADMIN'] },
+];
+
+function buildTabs() {
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = '';
+  let first = true;
+  TAB_CONFIG.forEach(t => {
+    if (!t.roles.includes(currentUser.role)) return;
+    const btn = document.createElement('button');
+    btn.className = 'tab-btn' + (first ? ' active' : '');
+    btn.textContent = t.label;
+    btn.onclick = () => switchTab(t.id, btn);
+    bar.appendChild(btn);
+    first = false;
+  });
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'status')  loadStatus();
+  if (id === 'repair')  loadRepairs();
+  if (id === 'pm')      loadPMPlan();
+  if (id === 'history') loadHistory();
+  if (id === 'admin')   { loadAdminUsers(); loadAdminMachines(); loadAdminPMPlan(); }
+}
+
+// ===== MACHINES =====
+async function loadMachines() {
+  const res = await api({ action: 'getMachines' });
+  if (res.success) { machines = res.data; populateMachineDropdowns(); populatePMMultiSelect(); }
+}
+
+function populateMachineDropdowns() {
+  ['repairMachine','historyMachine'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = id === 'historyMachine' ? '<option value="">-- ทุกเครื่อง --</option>' : '';
+    machines.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.MACHINE_ID;
+      opt.textContent = `${m.MACHINE_ID} - ${m.MACHINE_NAME}`;
+      el.appendChild(opt);
+    });
+  });
+}
+
+function populatePMMultiSelect() {
+  const el = document.getElementById('pmMachineList');
+  if (!el) return;
+  el.innerHTML = '';
+  machines.forEach(m => {
+    const label = document.createElement('label');
+    label.className = 'machine-checkbox';
+    label.innerHTML = `<input type="checkbox" value="${m.MACHINE_ID}"> ${m.MACHINE_ID} — ${m.MACHINE_NAME}`;
+    el.appendChild(label);
+  });
+}
+
+function toggleSelectAll() {
+  const boxes = document.querySelectorAll('#pmMachineList input[type=checkbox]');
+  const allChecked = [...boxes].every(c => c.checked);
+  boxes.forEach(c => c.checked = !allChecked);
+}
+
+// ===== STATUS =====
+async function loadStatus() {
+  const [repRes, pmRes] = await Promise.all([
+    api({ action: 'getRepairs' }),
+    api({ action: 'getPMPlan', month: getMonthStr(pmViewDate) })
+  ]);
+  if (!repRes.success) return;
+  repairs = repRes.data;
+  pmPlans = pmRes.success ? pmRes.data : [];
+  machineStatusMap = {};
+  let cR=0, cP=0, cB=0, cPM=0;
+  machines.forEach(m => {
+    const ar = repairs.find(r => r.MACHINE_ID === m.MACHINE_ID && (r.STATUS==='PENDING'||r.STATUS==='IN_PROGRESS'));
+    const hp = pmPlans.find(p => p.MACHINE_ID === m.MACHINE_ID && p.STATUS !== 'DONE');
+    let st = 'ready';
+    if      (ar && ar.STATUS==='IN_PROGRESS') { st='breakdown'; cB++; }
+    else if (ar)  { st='pending'; cP++; }
+    else if (hp)  { st='pm';      cPM++; }
+    else          cR++;
+    machineStatusMap[m.MACHINE_ID] = st;
+  });
+  document.getElementById('statReady').textContent     = cR;
+  document.getElementById('statPending').textContent   = cP;
+  document.getElementById('statBreakdown').textContent = cB;
+  document.getElementById('statPM').textContent        = cPM;
+  renderMachineGrid(currentFilter);
+}
+
+function renderMachineGrid(filter) {
+  const grid = document.getElementById('machineGrid');
+  grid.innerHTML = '';
+  const list = filter ? machines.filter(m => machineStatusMap[m.MACHINE_ID] === filter) : machines;
+  if (!list.length) { grid.innerHTML = '<p class="empty-msg">ไม่มีเครื่องในหมวดนี้</p>'; return; }
+  const bm = { ready:'badge-ready', pending:'badge-pending', breakdown:'badge-progress', pm:'badge-pm' };
+  const tm = { ready:'พร้อมใช้งาน', pending:'รอซ่อม', breakdown:'กำลังซ่อม', pm:'แผน PM' };
+  list.forEach(m => {
+    const st = machineStatusMap[m.MACHINE_ID] || 'ready';
+    const card = document.createElement('div');
+    card.className = 'machine-card';
+    card.innerHTML = `<div class="mc-name">${m.MACHINE_ID}</div><div class="mc-type">${m.MACHINE_NAME}</div><span class="badge ${bm[st]}">${tm[st]}</span>`;
+    card.onclick = () => openMachineModal(m.MACHINE_ID);
+    grid.appendChild(card);
+  });
+}
+
+function filterMachines(type) {
+  const labels = { ready:'✅ พร้อมใช้งาน', pending:'🟡 รอซ่อม', breakdown:'🔵 กำลังซ่อม', pm:'🟣 แผน PM' };
+  const colors = { ready:'#66bb6a', pending:'#ffa726', breakdown:'#4fc3f7', pm:'#ab47bc' };
+  if (currentFilter === type) { clearFilter(); return; }
+  currentFilter = type;
+  document.getElementById('filterBar').style.display = 'flex';
+  document.getElementById('filterLabel').textContent = `กรอง: ${labels[type]}`;
+  document.getElementById('filterLabel').style.color = colors[type];
+  renderMachineGrid(type);
+  if (type !== 'ready') openStatModal(type);
+}
+
+function clearFilter() {
+  currentFilter = null;
+  document.getElementById('filterBar').style.display = 'none';
+  renderMachineGrid(null);
+}
+
+function openStatModal(type) {
+  const titles = { pending:'🟡 เครื่องรอซ่อม', breakdown:'🔵 เครื่องกำลังซ่อม', pm:'🟣 เครื่องที่มีแผน PM', ready:'✅ เครื่องพร้อมใช้งาน' };
+  document.getElementById('statModalTitle').textContent = titles[type];
+  let body = '';
+  if (type === 'pending' || type === 'breakdown') {
+    const st   = type === 'pending' ? 'PENDING' : 'IN_PROGRESS';
+    const list = repairs.filter(r => r.STATUS === st);
+    body = list.length ? `<table><tr><th>เลขที่</th><th>เครื่อง</th><th>อาการ</th><th>แจ้งโดย</th><th>เวลาแจ้ง</th></tr>${list.map(r=>`<tr><td>${r.REPAIR_ID}</td><td>${r.MACHINE_ID}</td><td>${r.SYMPTOM}</td><td>${r.REPORTED_BY}</td><td style="font-size:11px">${formatDate(r.REPORT_TIME)}</td></tr>`).join('')}</table>` : '<p class="empty-msg">ไม่มีรายการ</p>';
+  } else if (type === 'pm') {
+    const list = pmPlans.filter(p => p.STATUS !== 'DONE');
+    body = list.length ? `<table><tr><th>Plan ID</th><th>เครื่อง</th><th>วันที่แผน</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th></tr>${list.map(p=>`<tr><td>${p.PLAN_ID}</td><td>${p.MACHINE_ID}</td><td>${formatDate(p.PLAN_DATE)}</td><td>${p.ASSIGNED_TO}</td><td><span class="badge ${pmBadge(p.STATUS)}">${p.STATUS}</span></td></tr>`).join('')}</table>` : '<p class="empty-msg">ไม่มีแผน PM ที่ค้างอยู่</p>';
+  } else {
+    const list = machines.filter(m => machineStatusMap[m.MACHINE_ID] === 'ready');
+    body = `<table><tr><th>เครื่อง</th><th>ชื่อ</th><th>ประเภท</th><th>กลุ่ม</th></tr>${list.map(m=>`<tr><td>${m.MACHINE_ID}</td><td>${m.MACHINE_NAME}</td><td>${m.TYPE||'-'}</td><td>${m.GROUP||'-'}</td></tr>`).join('')}</table>`;
+  }
+  document.getElementById('statModalBody').innerHTML = body;
+  document.getElementById('statModal').classList.add('show');
+}
+
+function openMachineModal(machineId) {
+  const m       = machines.find(x => x.MACHINE_ID === machineId);
+  const actRep  = repairs.filter(r => r.MACHINE_ID === machineId && r.STATUS !== 'DONE');
+  const mcPMs   = pmPlans.filter(p => p.MACHINE_ID === machineId && p.STATUS !== 'DONE');
+  const doneRep = repairs.filter(r => r.MACHINE_ID === machineId && r.STATUS === 'DONE');
+  const totalCost = doneRep.reduce((s,r)=>s+(parseFloat(r.COST)||0),0);
+  document.getElementById('machineModalTitle').textContent = `${machineId} — ${m?.MACHINE_NAME||''}`;
+  let body = `
+    <div class="detail-row"><span class="detail-label">ประเภท</span><span class="detail-value">${m?.TYPE||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">กลุ่ม</span><span class="detail-value">${m?.GROUP||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">วันติดตั้ง</span><span class="detail-value">${m?.INSTALL_DATE||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">Book Value</span><span class="detail-value" style="color:#ffa726">${totalCost.toLocaleString()} บาท</span></div>
+    <div class="detail-row"><span class="detail-label">ประวัติซ่อม</span><span class="detail-value">${doneRep.length} ครั้ง</span></div>`;
+  if (actRep.length) {
+    body += `<div class="section-title">🔴 งานซ่อมค้างอยู่</div>`;
+    actRep.forEach(r => { body += `<div class="plan-confirm-card"><div class="detail-row"><span class="detail-label">เลขที่</span><span class="detail-value">${r.REPAIR_ID}</span></div><div class="detail-row"><span class="detail-label">อาการ</span><span class="detail-value">${r.SYMPTOM}</span></div><div class="detail-row"><span class="detail-label">สถานะ</span><span class="detail-value"><span class="badge ${statusBadge(r.STATUS)}">${statusText(r.STATUS)}</span></span></div></div>`; });
+  }
+  if (mcPMs.length) {
+    body += `<div class="section-title">🟣 แผน PM ค้างอยู่</div>`;
+    mcPMs.forEach(p => { body += `<div class="plan-confirm-card"><div class="detail-row"><span class="detail-label">Plan ID</span><span class="detail-value">${p.PLAN_ID}</span></div><div class="detail-row"><span class="detail-label">วันที่แผน</span><span class="detail-value">${formatDate(p.PLAN_DATE)}</span></div><div class="detail-row"><span class="detail-label">สถานะ</span><span class="detail-value"><span class="badge ${pmBadge(p.STATUS)}">${p.STATUS}</span></span></div></div>`; });
+  }
+  document.getElementById('machineModalBody').innerHTML = body;
+  document.getElementById('machineModal').classList.add('show');
+}
+
+// ===== REPAIR =====
+async function loadRepairs() {
+  const res = await api({ action: 'getRepairs' });
+  if (!res.success) return;
+  repairs = res.data;
+  renderMyRepairs(repairs.filter(r => r.REPORTED_BY === currentUser.username));
+  if (['MTN','ADMIN','MANAGER'].includes(currentUser.role)) {
+    document.getElementById('mtnRepairPanel').style.display = 'block';
+    renderAllRepairs(repairs);
+  }
+}
+
+function renderMyRepairs(list) {
+  const el = document.getElementById('myRepairList');
+  if (!list.length) { el.innerHTML = '<p class="empty-msg">ยังไม่มีรายการแจ้งซ่อม</p>'; return; }
+  el.innerHTML = `<table><tr><th>เลขที่</th><th>เครื่อง</th><th>อาการ</th><th>สถานะ</th><th>เวลา</th></tr>${list.map(r=>`<tr><td>${r.REPAIR_ID}</td><td>${r.MACHINE_ID}</td><td>${r.SYMPTOM}</td><td><span class="badge ${statusBadge(r.STATUS)}">${statusText(r.STATUS)}</span></td><td style="font-size:11px">${formatDate(r.REPORT_TIME)}</td></tr>`).join('')}</table>`;
+}
+
+function renderAllRepairs(list) {
+  const el = document.getElementById('allRepairList');
+  const pending = list.filter(r => r.STATUS !== 'DONE');
+  if (!pending.length) { el.innerHTML = '<p class="empty-msg">ไม่มีงานค้าง ✅</p>'; return; }
+  el.innerHTML = `<table><tr><th>เลขที่</th><th>เครื่อง</th><th>อาการ</th><th>แจ้งโดย</th><th>สถานะ</th><th>เวลาแจ้ง</th><th></th></tr>${pending.map(r=>`<tr><td>${r.REPAIR_ID}</td><td>${r.MACHINE_ID}</td><td>${r.SYMPTOM}</td><td>${r.REPORTED_BY}</td><td><span class="badge ${statusBadge(r.STATUS)}">${statusText(r.STATUS)}</span></td><td style="font-size:11px">${formatDate(r.REPORT_TIME)}</td><td><button class="btn btn-warning btn-sm" onclick="openRepairModal('${r.REPAIR_ID}')">อัพเดท</button></td></tr>`).join('')}</table>`;
+}
+
+function confirmRepair() {
+  const machineId = document.getElementById('repairMachine').value;
+  const symptom   = document.getElementById('repairSymptom').value.trim();
+  if (!machineId || !symptom) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+  const mcName = machines.find(m => m.MACHINE_ID === machineId)?.MACHINE_NAME || '';
+  document.getElementById('confirmRepairText').innerHTML = `เครื่อง: <b style="color:#4fc3f7">${machineId} — ${mcName}</b><br><br>อาการ: <b>${symptom}</b><br><br>ยืนยันการแจ้งซ่อม?`;
+  document.getElementById('confirmRepairModal').classList.add('show');
+}
+
+async function submitRepair() {
+  closeModal('confirmRepairModal');
+  const machineId = document.getElementById('repairMachine').value;
+  const symptom   = document.getElementById('repairSymptom').value.trim();
+  const res = await api({ action: 'addRepair', machineId, symptom, reportedBy: currentUser.username });
+  if (res.success) { alert(`✅ แจ้งซ่อมสำเร็จ\nเลขที่: ${res.repairId}`); document.getElementById('repairSymptom').value = ''; loadRepairs(); loadStatus(); }
+}
+
+function openRepairModal(repairId) {
+  const r = repairs.find(x => x.REPAIR_ID === repairId);
+  document.getElementById('modalRepairId').value = repairId;
+  document.getElementById('repairModalTitle').textContent = `อัพเดท: ${repairId} — ${r.MACHINE_ID}`;
+  let body = '';
+  if (r.STATUS === 'PENDING') {
+    body = `<p style="color:#aaa;margin-bottom:12px">กดรับงานเพื่อเปลี่ยนสถานะเป็น "กำลังซ่อม"</p>`;
+    document.getElementById('modalSaveBtn').textContent = '✅ รับงาน';
+    document.getElementById('modalSaveBtn').onclick = () => acceptRepair(repairId);
+  } else {
+    body = `<div class="form-group"><label>สาเหตุการเกิด</label><textarea class="form-control" id="mRootCause" rows="2"></textarea></div><div class="form-group"><label>วิธีแก้ไข</label><textarea class="form-control" id="mSolution" rows="2"></textarea></div><div class="form-group"><label>ค่าใช้จ่าย (บาท)</label><input type="number" class="form-control" id="mCost" /></div>`;
+    document.getElementById('modalSaveBtn').textContent = '✅ บันทึกซ่อมเสร็จ';
+    document.getElementById('modalSaveBtn').onclick = () => doneRepair(repairId);
+  }
+  document.getElementById('repairModalBody').innerHTML = body;
+  document.getElementById('repairModal').classList.add('show');
+}
+
+async function acceptRepair(repairId) {
+  const res = await api({ action: 'updateRepair', repairId, status: 'IN_PROGRESS', receivedBy: currentUser.username });
+  if (res.success) { closeModal('repairModal'); loadRepairs(); loadStatus(); }
+}
+
+async function doneRepair(repairId) {
+  const res = await api({ action: 'updateRepair', repairId, status: 'DONE', rootCause: document.getElementById('mRootCause').value, solution: document.getElementById('mSolution').value, cost: document.getElementById('mCost').value });
+  if (res.success) { closeModal('repairModal'); loadRepairs(); loadStatus(); }
+}
+
+// ===== PM PLAN =====
+function changeMonth(dir) { pmViewDate.setMonth(pmViewDate.getMonth() + dir); loadPMPlan(); }
+function changeAdminPMMonth(dir) { adminPMViewDate.setMonth(adminPMViewDate.getMonth() + dir); loadAdminPMPlan(); }
+
+async function loadPMPlan() {
+  const monthStr = getMonthStr(pmViewDate);
+  const thLabel  = pmViewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+  document.getElementById('pmMonthLabel').textContent = thLabel;
+
+  if (['MTN','ADMIN'].includes(currentUser.role))  document.getElementById('addPMPanel').style.display = 'block';
+  if (currentUser.role === 'PLANNING') document.getElementById('planningConfirmPanel').style.display = 'block';
+
+  const res = await api({ action: 'getPMPlan', month: monthStr });
+  if (!res.success) return;
+  pmPlans = res.data;
+
+  const el = document.getElementById('pmCalendar');
+  if (!pmPlans.length) { el.innerHTML = '<p class="empty-msg">ยังไม่มีแผน PM เดือนนี้</p>'; return; }
+
+  // ปุ่ม "ทำแล้ว" เฉพาะ MTN เท่านั้น (Phase 2)
+  const canDone   = currentUser.role === 'MTN';
+  const canAction = ['MTN','PLANNING','ADMIN'].includes(currentUser.role);
+
+  el.innerHTML = `<table>
+    <tr><th>Plan ID</th><th>เครื่อง</th><th>วันที่แผน</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th>${canAction?'<th></th>':''}
+    </tr>
+    ${pmPlans.map(p=>`<tr>
+      <td>${p.PLAN_ID}</td><td>${p.MACHINE_ID}</td>
+      <td>${formatDate(p.PLAN_DATE)}</td><td>${p.ASSIGNED_TO}</td>
+      <td><span class="badge ${pmBadge(p.STATUS)}">${p.STATUS}</span></td>
+      ${canAction ? `<td>${canDone && p.STATUS!=='DONE' ? `<button class="btn btn-success btn-sm" onclick="donePM('${p.PLAN_ID}')">✅ ทำแล้ว</button>` : ''}</td>` : ''}
+    </tr>`).join('')}
+  </table>`;
+
+  if (currentUser.role === 'PLANNING') {
+    const pending = pmPlans.filter(p => p.STATUS === 'PLANNED');
+    const confEl  = document.getElementById('planningConfirmList');
+    if (!pending.length) { confEl.innerHTML = '<p class="text-success">✅ ยืนยันครบทุกแผนแล้ว</p>'; return; }
+    confEl.innerHTML = pending.map(p=>`
+      <div class="plan-confirm-card">
+        <div class="detail-row"><span class="detail-label">Plan ID</span><span class="detail-value">${p.PLAN_ID}</span></div>
+        <div class="detail-row"><span class="detail-label">เครื่อง</span><span class="detail-value">${p.MACHINE_ID}</span></div>
+        <div class="detail-row"><span class="detail-label">วันที่แผน</span><span class="detail-value">${formatDate(p.PLAN_DATE)}</span></div>
+        <div class="detail-row"><span class="detail-label">ผู้รับผิดชอบ</span><span class="detail-value">${p.ASSIGNED_TO}</span></div>
+        <div style="margin-top:10px"><button class="btn btn-success btn-sm" onclick="openPlanConfirm('${p.PLAN_ID}','${p.MACHINE_ID}','${p.PLAN_DATE}')">✅ ยืนยันทำได้ตามกำหนด</button></div>
+      </div>`).join('');
+  }
+}
+
+async function submitPMPlan() {
+  const checked  = [...document.querySelectorAll('#pmMachineList input:checked')].map(c=>c.value);
+  const planDate = document.getElementById('pmDate').value;
+  const assignee = document.getElementById('pmAssignee').value.trim();
+  if (!checked.length || !planDate || !assignee) { alert('กรุณาเลือกเครื่อง วันที่ และผู้รับผิดชอบ'); return; }
+  let success = 0;
+  for (const machineId of checked) { const r = await api({ action: 'addPMPlan', machineId, planDate, assignedTo: assignee }); if (r.success) success++; }
+  alert(`✅ เพิ่มแผน PM ${success}/${checked.length} เครื่อง สำเร็จ`);
+  document.querySelectorAll('#pmMachineList input').forEach(c=>c.checked=false);
+  loadPMPlan();
+}
+
+function openPlanConfirm(planId, machineId, planDate) {
+  document.getElementById('planConfirmText').innerHTML = `ยืนยันว่าสามารถทำ PM เครื่อง <b style="color:#4fc3f7">${machineId}</b><br>วันที่ <b>${formatDate(planDate)}</b> ได้ตามกำหนด?`;
+  document.getElementById('planConfirmBtn').onclick = () => confirmPlanByPlanning(planId);
+  document.getElementById('planConfirmModal').classList.add('show');
+}
+
+async function confirmPlanByPlanning(planId) {
+  closeModal('planConfirmModal');
+  const res = await api({ action: 'updatePMPlan', planId, status: 'CONFIRMED', doneBy: currentUser.username });
+  if (res.success) loadPMPlan();
+}
+
+async function donePM(planId) {
+  const res = await api({ action: 'updatePMPlan', planId, status: 'DONE', doneBy: currentUser.username });
+  if (res.success) { loadPMPlan(); loadStatus(); }
+}
+
+// ===== HISTORY =====
+async function loadHistory() {
+  const machineId = document.getElementById('historyMachine')?.value || '';
+  const res = await api({ action: 'getHistory', machineId });
+  if (!res.success) return;
+
+  // Book Value
+  const bookMap = {};
+  res.data.forEach(r => { if (!bookMap[r.MACHINE_ID]) bookMap[r.MACHINE_ID]=0; bookMap[r.MACHINE_ID]+=(parseFloat(r.COST)||0); });
+  const bvEl = document.getElementById('bookValueList');
+  const bvList = Object.entries(bookMap).sort((a,b)=>b[1]-a[1]);
+  bvEl.innerHTML = bvList.length ? `<table><tr><th>เครื่อง</th><th>ค่าซ่อมสะสม (บาท)</th></tr>${bvList.map(([m,c])=>`<tr><td>${m}</td><td style="color:#ffa726;font-weight:600">${c.toLocaleString()}</td></tr>`).join('')}</table>` : '<p class="empty-msg">ยังไม่มีข้อมูล</p>';
+
+  // History Table — คลิกดูรายละเอียด
+  const hEl = document.getElementById('historyList');
+  hEl.innerHTML = res.data.length ? `<table>
+    <tr><th>เลขที่</th><th>เครื่อง</th><th>สาเหตุ</th><th>Cost</th><th>วันซ่อม</th><th></th></tr>
+    ${res.data.map(r=>`<tr>
+      <td>${r.REPAIR_ID}</td><td>${r.MACHINE_ID}</td>
+      <td>${r.ROOT_CAUSE||'-'}</td>
+      <td>${parseFloat(r.COST||0).toLocaleString()}</td>
+      <td style="font-size:11px">${formatDate(r.FINISH_TIME)}</td>
+      <td><button class="btn btn-info btn-sm" onclick='openRepairDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>รายละเอียด</button></td>
+    </tr>`).join('')}
+  </table>` : '<p class="empty-msg">ยังไม่มีประวัติ</p>';
+
+  // Charts
+  renderHistoryCharts(res.data);
+}
+
+function openRepairDetail(r) {
+  document.getElementById('repairDetailTitle').textContent = `รายละเอียดการซ่อม: ${r.REPAIR_ID}`;
+  document.getElementById('repairDetailBody').innerHTML = `
+    <div class="detail-row"><span class="detail-label">เลขที่</span><span class="detail-value">${r.REPAIR_ID}</span></div>
+    <div class="detail-row"><span class="detail-label">เครื่อง</span><span class="detail-value">${r.MACHINE_ID}</span></div>
+    <div class="detail-row"><span class="detail-label">แจ้งโดย</span><span class="detail-value">${r.REPORTED_BY||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">เวลาแจ้ง</span><span class="detail-value">${formatDate(r.REPORT_TIME)}</span></div>
+    <div class="detail-row"><span class="detail-label">อาการเสีย</span><span class="detail-value">${r.SYMPTOM||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">รับงานโดย</span><span class="detail-value">${r.RECEIVED_BY||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">เวลารับงาน</span><span class="detail-value">${formatDate(r.RECEIVED_TIME)}</span></div>
+    <div style="margin:14px 0;border-top:1px solid rgba(255,255,255,0.08)"></div>
+    <div class="section-title">🔍 สาเหตุและวิธีแก้ไข</div>
+    <div class="detail-row"><span class="detail-label">สาเหตุการเกิด</span><span class="detail-value" style="color:#ffa726">${r.ROOT_CAUSE||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">วิธีแก้ไข</span><span class="detail-value" style="color:#66bb6a">${r.SOLUTION||'-'}</span></div>
+    <div class="detail-row"><span class="detail-label">ค่าใช้จ่าย</span><span class="detail-value" style="color:#ef5350">${parseFloat(r.COST||0).toLocaleString()} บาท</span></div>
+    <div class="detail-row"><span class="detail-label">เวลาซ่อมเสร็จ</span><span class="detail-value">${formatDate(r.FINISH_TIME)}</span></div>`;
+  document.getElementById('repairDetailModal').classList.add('show');
+}
+
+function renderHistoryCharts(data) {
+  // รวมข้อมูลรายเดือน
+  const monthMap = {};
+  data.forEach(r => {
+    if (!r.FINISH_TIME) return;
+    const d = new Date(r.FINISH_TIME);
+    if (isNaN(d)) return;
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    if (!monthMap[key]) monthMap[key] = { count: 0, cost: 0 };
+    monthMap[key].count++;
+    monthMap[key].cost += parseFloat(r.COST||0);
+  });
+  const keys   = Object.keys(monthMap).sort().slice(-6);
+  const labels = keys.map(k => { const [y,m]=k.split('-'); return `${m}/${y.slice(2)}`; });
+  const counts = keys.map(k => monthMap[k].count);
+  const costs  = keys.map(k => monthMap[k].cost);
+
+  if (chartCount) chartCount.destroy();
+  if (chartCost)  chartCost.destroy();
+
+  const cfg = (label, data, color) => ({
+    type: 'bar',
+    data: { labels, datasets: [{ label, data, backgroundColor: color + '99', borderColor: color, borderWidth: 1, borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#aaa' } } }, scales: { x: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true } } }
+  });
+
+  chartCount = new Chart(document.getElementById('chartRepairCount'), cfg('จำนวนครั้ง', counts, '#4fc3f7'));
+  chartCost  = new Chart(document.getElementById('chartRepairCost'),  cfg('ค่าซ่อม (บาท)', costs, '#ffa726'));
+}
+
+// ===== ADMIN =====
+function switchAdminTab(id, btn) {
+  document.querySelectorAll('.admin-panel').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.admin-tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('adminPanel-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'users')    loadAdminUsers();
+  if (id === 'machines') loadAdminMachines();
+  if (id === 'pmadmin')  loadAdminPMPlan();
+}
+
+async function loadAdminUsers() {
+  const res = await api({ action: 'getUsers' });
+  if (!res.success) return;
+  allUsers = res.data;
+  const el = document.getElementById('adminUserList');
+  el.innerHTML = `<table>
+    <tr><th>ID</th><th>Username</th><th>Full Name</th><th>Role</th><th>Email</th><th></th></tr>
+    ${allUsers.map(u=>`<tr>
+      <td>${u.USER_ID}</td><td>${u.USERNAME}</td><td>${u.FULL_NAME||'-'}</td>
+      <td><span class="badge badge-pending">${u.ROLE}</span></td>
+      <td style="font-size:12px">${u.EMAIL||'-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="confirmDelete('user','${u.USER_ID}','${u.USERNAME}')">🗑️</button></td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+async function loadAdminMachines() {
+  const res = await api({ action: 'getMachines' });
+  if (!res.success) return;
+  const el = document.getElementById('adminMachineList');
+  el.innerHTML = `<table>
+    <tr><th>Machine ID</th><th>ชื่อ</th><th>Type</th><th>Group</th><th>Install Date</th><th></th></tr>
+    ${res.data.map(m=>`<tr>
+      <td>${m.MACHINE_ID}</td><td>${m.MACHINE_NAME}</td>
+      <td>${m.TYPE||'-'}</td><td>${m.GROUP||'-'}</td>
+      <td style="font-size:12px">${m.INSTALL_DATE||'-'}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="confirmDelete('machine','${m.MACHINE_ID}','${m.MACHINE_ID}')">🗑️</button></td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+async function loadAdminPMPlan() {
+  const monthStr = getMonthStr(adminPMViewDate);
+  const thLabel  = adminPMViewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
+  document.getElementById('adminPMMonthLabel').textContent = thLabel;
+  const res = await api({ action: 'getPMPlan', month: monthStr });
+  if (!res.success) return;
+  const el = document.getElementById('adminPMList');
+  if (!res.data.length) { el.innerHTML = '<p class="empty-msg">ไม่มีแผน PM เดือนนี้</p>'; return; }
+  el.innerHTML = `<table>
+    <tr><th>Plan ID</th><th>เครื่อง</th><th>วันที่แผน</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th><th></th></tr>
+    ${res.data.map(p=>`<tr>
+      <td>${p.PLAN_ID}</td><td>${p.MACHINE_ID}</td>
+      <td>${formatDate(p.PLAN_DATE)}</td><td>${p.ASSIGNED_TO}</td>
+      <td><span class="badge ${pmBadge(p.STATUS)}">${p.STATUS}</span></td>
+      <td>
+        ${p.STATUS!=='DONE' ? `<button class="btn btn-success btn-sm" onclick="adminDonePM('${p.PLAN_ID}')" style="margin-right:4px">✅</button>` : ''}
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete('pm','${p.PLAN_ID}','${p.PLAN_ID}')">🗑️</button>
+      </td>
+    </tr>`).join('')}
+  </table>`;
+}
+
+async function addUser() {
+  const data = {
+    action:   'addUser',
+    username: document.getElementById('newUsername').value.trim(),
+    password: document.getElementById('newPassword').value.trim(),
+    fullname: document.getElementById('newFullname').value.trim(),
+    role:     document.getElementById('newRole').value,
+    email:    document.getElementById('newEmail').value.trim(),
+  };
+  if (!data.username || !data.password || !data.role) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+  const res = await api(data);
+  if (res.success) { alert('✅ เพิ่ม User สำเร็จ'); ['newUsername','newPassword','newFullname','newEmail'].forEach(id=>document.getElementById(id).value=''); loadAdminUsers(); }
+  else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
+}
+
+async function addMachine() {
+  const data = {
+    action:      'addMachine',
+    machineId:   document.getElementById('newMachineId').value.trim(),
+    machineName: document.getElementById('newMachineName').value.trim(),
+    type:        document.getElementById('newMachineType').value,
+    group:       document.getElementById('newMachineGroup').value.trim(),
+    installDate: document.getElementById('newMachineDate').value,
+  };
+  if (!data.machineId || !data.machineName) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
+  const res = await api(data);
+  if (res.success) { alert('✅ เพิ่มเครื่องจักรสำเร็จ'); ['newMachineId','newMachineName','newMachineGroup'].forEach(id=>document.getElementById(id).value=''); await loadMachines(); loadAdminMachines(); }
+  else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
+}
+
+function confirmDelete(type, id, label) {
+  const typeLabel = { user:'User', machine:'เครื่องจักร', pm:'แผน PM' };
+  document.getElementById('deleteConfirmText').innerHTML = `ต้องการลบ ${typeLabel[type]}<br><b style="color:#ef5350">${label}</b><br>ออกจากระบบ?`;
+  document.getElementById('deleteConfirmBtn').onclick = () => doDelete(type, id);
+  document.getElementById('deleteConfirmModal').classList.add('show');
+}
+
+async function doDelete(type, id) {
+  closeModal('deleteConfirmModal');
+  const res = await api({ action: 'deleteRecord', type, id });
+  if (res.success) {
+    alert('✅ ลบสำเร็จ');
+    if (type === 'user')    loadAdminUsers();
+    if (type === 'machine') { await loadMachines(); loadAdminMachines(); }
+    if (type === 'pm')      loadAdminPMPlan();
+  } else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
+}
+
+async function adminDonePM(planId) {
+  const res = await api({ action: 'updatePMPlan', planId, status: 'DONE', doneBy: currentUser.username });
+  if (res.success) loadAdminPMPlan();
+}
+
+// ===== HELPERS =====
+async function api(payload) {
+  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+  return res.json();
+}
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function statusBadge(s) { return s==='PENDING'?'badge-pending':s==='IN_PROGRESS'?'badge-progress':s==='DONE'?'badge-ready':''; }
+function statusText(s)  { return s==='PENDING'?'รอซ่อม':s==='IN_PROGRESS'?'กำลังซ่อม':s==='DONE'?'เสร็จแล้ว':s; }
+function pmBadge(s)     { return s==='PLANNED'?'badge-pending':s==='CONFIRMED'?'badge-progress':s==='DONE'?'badge-ready':''; }
+function getMonthStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
+function formatDate(val) { if(!val) return '-'; const d=new Date(val); return isNaN(d)?val:d.toLocaleString('th-TH'); }
+document.getElementById('inputPassword').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>

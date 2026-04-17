@@ -943,7 +943,7 @@ async function loadAdminUsers() {
   el.innerHTML = `<table>
     <tr><th>ID</th><th>Username</th><th>Full Name</th><th>Role</th><th>Email</th><th></th></tr>
     ${allUsers.map(u=>`<tr>
-      <td>${u.USER_ID}</td><td>${u.USERNAME}</td><td>${u.FULL_NAME||'-'}</td>
+      <td>${u.USER_ID}</td><td>${u.USERNAME}</td><td>${u.fullname||'-'}</td>
       <td><span class="badge badge-pending">${u.ROLE}</span></td>
       <td style="font-size:12px">${u.EMAIL||'-'}</td>
       <td><button class="btn btn-danger btn-sm" onclick="confirmDelete('user','${u.USER_ID}','${u.USERNAME}')">🗑️</button></td>

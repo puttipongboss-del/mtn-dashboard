@@ -144,7 +144,7 @@
   <div class="navbar">
     <div class="navbar-brand">🏭 MTN Dashboard</div>
     <div class="navbar-user">
-      <span id="navFullname"></span>
+      <span id="navFull_name"></span>
       <span class="role-badge" id="navRole"></span>
       <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
     </div>
@@ -257,7 +257,7 @@
           <div class="grid-3">
             <div class="form-group"><label>Username</label><input type="text" class="form-control" id="newUsername" placeholder="username" /></div>
             <div class="form-group"><label>Password</label><input type="text" class="form-control" id="newPassword" placeholder="password" /></div>
-            <div class="form-group"><label>Full Name</label><input type="text" class="form-control" id="newFullname" placeholder="ชื่อ-สกุล" /></div>
+            <div class="form-group"><label>Full Name</label><input type="text" class="form-control" id="newFull_name" placeholder="ชื่อ-สกุล" /></div>
             <div class="form-group"><label>Role</label>
               <select class="form-control" id="newRole">
                 <option value="FOREMAN">FOREMAN</option>
@@ -888,7 +888,7 @@ async function loadAdminUsers() {
   el.innerHTML = `<table>
     <tr><th>ID</th><th>Username</th><th>Full Name</th><th>Role</th><th>Email</th><th></th></tr>
     ${allUsers.map(u=>`<tr>
-      <td>${u.USER_ID}</td><td>${u.USERNAME}</td><td>${u.FULLNAME||'-'}</td>
+      <td>${u.USER_ID}</td><td>${u.USERNAME}</td><td>${u.FULL_NAME||'-'}</td>
       <td><span class="badge badge-pending">${u.ROLE}</span></td>
       <td style="font-size:12px">${u.EMAIL||'-'}</td>
       <td><button class="btn btn-danger btn-sm" onclick="confirmDelete('user','${u.USER_ID}','${u.USERNAME}')">🗑️</button></td>
@@ -938,7 +938,7 @@ async function addUser() {
     action:   'addUser',
     username: document.getElementById('newUsername').value.trim(),
     password: document.getElementById('newPassword').value.trim(),
-    fullname: document.getElementById('newFullname').value.trim(),
+    fullname: document.getElementById('newFull_name').value.trim(),
     role:     document.getElementById('newRole').value,
     email:    document.getElementById('newEmail').value.trim(),
   };

@@ -7,7 +7,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', sans-serif; background: #0f1923; color: #e0e0e0; min-height: 100vh; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0f1923;ol cor: #e0e0e0; min-height: 100vh; }
 
   #loginPage { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: linear-gradient(135deg, #0f1923, #1a2d3d); }
   .login-box { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 40px; width: 360px; text-align: center; }
@@ -782,43 +782,61 @@ async function donePM(planId) {
 
 // ===== HISTORY =====
 async function loadHistory() {
-  const res = await api({action:'getRepairs'});
+  const res = await api({ action: 'getRepairs' });
+
+  if (!res.success) return;
 
   let data = res.data || [];
 
-  // ✅ เอาเฉพาะ DONE
+  // เอาเฉพาะ DONE
   data = data.filter(x => x.STATUS === 'DONE');
 
   console.log("History Data:", data);
 
- renderHistoryTable(data);
-renderHistoryCharts(data);
-}
-
-  // Book Value
+  // ===== Book Value =====
   const bookMap = {};
-  res.data.forEach(r => { if (!bookMap[r.MACHINE_ID]) bookMap[r.MACHINE_ID]=0; bookMap[r.MACHINE_ID]+=(parseFloat(r.COST)||0); });
+  data.forEach(r => {
+    if (!bookMap[r.MACHINE_ID]) bookMap[r.MACHINE_ID] = 0;
+    bookMap[r.MACHINE_ID] += (parseFloat(r.COST) || 0);
+  });
+
   const bvEl = document.getElementById('bookValueList');
-  const bvList = Object.entries(bookMap).sort((a,b)=>b[1]-a[1]);
-  bvEl.innerHTML = bvList.length ? `<table><tr><th>เครื่อง</th><th>ค่าซ่อมสะสม (บาท)</th></tr>${bvList.map(([m,c])=>`<tr><td>${m}</td><td style="color:#ffa726;font-weight:600">${c.toLocaleString()}</td></tr>`).join('')}</table>` : '<p class="empty-msg">ยังไม่มีข้อมูล</p>';
+  const bvList = Object.entries(bookMap).sort((a, b) => b[1] - a[1]);
 
-  // History Table — คลิกดูรายละเอียด
+  bvEl.innerHTML = bvList.length
+    ? `<table><tr><th>เครื่อง</th><th>ค่าซ่อมสะสม (บาท)</th></tr>
+        ${bvList.map(([m, c]) =>
+          `<tr><td>${m}</td><td style="color:#ffa726;font-weight:600">${c.toLocaleString()}</td></tr>`
+        ).join('')}
+       </table>`
+    : '<p class="empty-msg">ยังไม่มีข้อมูล</p>';
+
+  // ===== History Table =====
   const hEl = document.getElementById('historyList');
-  hEl.innerHTML = res.data.length ? `<table>
-    <tr><th>เลขที่</th><th>เครื่อง</th><th>สาเหตุ</th><th>Cost</th><th>วันซ่อม</th><th></th></tr>
-    ${res.data.map(r=>`<tr>
-      <td>${r.REPAIR_ID}</td><td>${r.MACHINE_ID}</td>
-      <td>${r.ROOT_CAUSE||'-'}</td>
-      <td>${parseFloat(r.COST||0).toLocaleString()}</td>
-      <td style="font-size:11px">${formatDate(r.FINISH_TIME)}</td>
-      <td><button class="btn btn-info btn-sm" onclick='openRepairDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>รายละเอียด</button></td>
-    </tr>`).join('')}
-  </table>` : '<p class="empty-msg">ยังไม่มีประวัติ</p>';
+  hEl.innerHTML = data.length
+    ? `<table>
+        <tr><th>เลขที่</th><th>เครื่อง</th><th>สาเหตุ</th><th>Cost</th><th>วันซ่อม</th><th></th></tr>
+        ${data.map(r => `
+          <tr>
+            <td>${r.REPAIR_ID}</td>
+            <td>${r.MACHINE_ID}</td>
+            <td>${r.ROOT_CAUSE || '-'}</td>
+            <td>${parseFloat(r.COST || 0).toLocaleString()}</td>
+            <td style="font-size:11px">${formatDate(r.FINISH_TIME)}</td>
+            <td>
+              <button class="btn btn-info btn-sm"
+                onclick='openRepairDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+                รายละเอียด
+              </button>
+            </td>
+          </tr>
+        `).join('')}
+      </table>`
+    : '<p class="empty-msg">ยังไม่มีประวัติ</p>';
 
-  // Charts
-  renderHistoryCharts(res.data);
+  // ===== Charts =====
+  renderHistoryCharts(data);
 }
-
 function openRepairDetail(r) {
   document.getElementById('repairDetailTitle').textContent = `รายละเอียดการซ่อม: ${r.REPAIR_ID}`;
   document.getElementById('repairDetailBody').innerHTML = `

@@ -788,12 +788,10 @@ async function loadHistory() {
 
   let data = res.data || [];
 
-  // เอาเฉพาะ DONE
   data = data.filter(x => x.STATUS === 'DONE');
 
   console.log("History Data:", data);
 
-  // ===== Book Value =====
   const bookMap = {};
   data.forEach(r => {
     if (!bookMap[r.MACHINE_ID]) bookMap[r.MACHINE_ID] = 0;
@@ -804,37 +802,22 @@ async function loadHistory() {
   const bvList = Object.entries(bookMap).sort((a, b) => b[1] - a[1]);
 
   bvEl.innerHTML = bvList.length
-    ? `<table><tr><th>เครื่อง</th><th>ค่าซ่อมสะสม (บาท)</th></tr>
-        ${bvList.map(([m, c]) =>
-          `<tr><td>${m}</td><td style="color:#ffa726;font-weight:600">${c.toLocaleString()}</td></tr>`
-        ).join('')}
-       </table>`
-    : '<p class="empty-msg">ยังไม่มีข้อมูล</p>';
+    ? `<table>${bvList.map(([m, c]) =>
+        `<tr><td>${m}</td><td>${c.toLocaleString()}</td></tr>`
+      ).join('')}</table>`
+    : 'ไม่มีข้อมูล';
 
-  // ===== History Table =====
   const hEl = document.getElementById('historyList');
   hEl.innerHTML = data.length
-    ? `<table>
-        <tr><th>เลขที่</th><th>เครื่อง</th><th>สาเหตุ</th><th>Cost</th><th>วันซ่อม</th><th></th></tr>
-        ${data.map(r => `
-          <tr>
-            <td>${r.REPAIR_ID}</td>
-            <td>${r.MACHINE_ID}</td>
-            <td>${r.ROOT_CAUSE || '-'}</td>
-            <td>${parseFloat(r.COST || 0).toLocaleString()}</td>
-            <td style="font-size:11px">${formatDate(r.FINISH_TIME)}</td>
-            <td>
-              <button class="btn btn-info btn-sm"
-                onclick='openRepairDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
-                รายละเอียด
-              </button>
-            </td>
-          </tr>
-        `).join('')}
-      </table>`
-    : '<p class="empty-msg">ยังไม่มีประวัติ</p>';
+    ? `<table>${data.map(r => `
+      <tr>
+        <td>${r.REPAIR_ID}</td>
+        <td>${r.MACHINE_ID}</td>
+        <td>${r.ROOT_CAUSE || '-'}</td>
+        <td>${r.COST}</td>
+      </tr>`).join('')}</table>`
+    : 'ไม่มีประวัติ';
 
-  // ===== Charts =====
   renderHistoryCharts(data);
 }
 function openRepairDetail(r) {

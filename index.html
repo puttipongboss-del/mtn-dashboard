@@ -144,7 +144,7 @@
   <div class="navbar">
     <div class="navbar-brand">🏭 MTN Dashboard</div>
     <div class="navbar-user">
-      <span id="navFull_name"></span>
+      <span id="navFullname"></span>
       <span class="role-badge" id="navRole"></span>
       <button class="btn-logout" onclick="doLogout()">ออกจากระบบ</button>
     </div>
@@ -396,6 +396,19 @@
 </div>
 
 <script>
+<!-- FIXED VERSION -->
+<script>
+// PATCH: normalize user fields after login
+function normalizeUser(u){
+  return {
+    username: u.USERNAME || u.username,
+    role: u.ROLE || u.role,
+    fullname: u.FULL_NAME || u.fullname,
+    email: u.EMAIL || u.email
+  };
+}
+</script>
+
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvPQOn5kO37bP1R-DMNBNOYZ4Onh1M5uGGtVigO2NzLY-SygOZbCRbi_nLYgH-5mcJ/exec';
 
 let currentUser      = null;
@@ -419,7 +432,7 @@ async function doLogin() {
   if (!username || !password) { errEl.textContent = 'กรุณากรอก Username และ Password'; return; }
   try {
     const res = await api({ action: 'login', username, password });
-    if (res.success) { currentUser = res.user; startApp(); }
+    if (res.success) { currentUser = normalizeUser(res.user); startApp(); }
     else errEl.textContent = res.message;
   } catch(e) { errEl.textContent = 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่'; }
 }
@@ -944,7 +957,7 @@ async function addUser() {
   };
   if (!data.username || !data.password || !data.role) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
   const res = await api(data);
-  if (res.success) { alert('✅ เพิ่ม User สำเร็จ'); ['newUsername','newPassword','newFullname','newEmail'].forEach(id=>document.getElementById(id).value=''); loadAdminUsers(); }
+  if (res.success) { alert('✅ เพิ่ม User สำเร็จ'); ['newUsername','newPassword','newFull_name','newEmail'].forEach(id=>document.getElementById(id).value=''); loadAdminUsers(); }
   else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
 }
 

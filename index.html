@@ -257,7 +257,7 @@
           <div class="grid-3">
             <div class="form-group"><label>Username</label><input type="text" class="form-control" id="newUsername" placeholder="username" /></div>
             <div class="form-group"><label>Password</label><input type="text" class="form-control" id="newPassword" placeholder="password" /></div>
-            <div class="form-group"><label>Full Name</label><input type="text" class="form-control" id="newFull_name" placeholder="ชื่อ-สกุล" /></div>
+            <div class="form-group"><label>Full Name</label><input type="text" class="form-control" id="newFullname" placeholder="ชื่อ-สกุล" /></div>
             <div class="form-group"><label>Role</label>
               <select class="form-control" id="newRole">
                 <option value="FOREMAN">FOREMAN</option>
@@ -396,19 +396,6 @@
 </div>
 
 <script>
-<!-- FIXED VERSION -->
-<script>
-// PATCH: normalize user fields after login
-function normalizeUser(u){
-  return {
-    username: u.USERNAME || u.username,
-    role: u.ROLE || u.role,
-    fullname: u.FULL_NAME || u.fullname,
-    email: u.EMAIL || u.email
-  };
-}
-</script>
-
 const API_URL = 'https://script.google.com/macros/s/AKfycbwvPQOn5kO37bP1R-DMNBNOYZ4Onh1M5uGGtVigO2NzLY-SygOZbCRbi_nLYgH-5mcJ/exec';
 
 let currentUser      = null;
@@ -432,7 +419,7 @@ async function doLogin() {
   if (!username || !password) { errEl.textContent = 'กรุณากรอก Username และ Password'; return; }
   try {
     const res = await api({ action: 'login', username, password });
-    if (res.success) { currentUser = normalizeUser(res.user); startApp(); }
+    if (res.success) { currentUser = res.user; startApp(); }
     else errEl.textContent = res.message;
   } catch(e) { errEl.textContent = 'เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่'; }
 }
@@ -951,13 +938,13 @@ async function addUser() {
     action:   'addUser',
     username: document.getElementById('newUsername').value.trim(),
     password: document.getElementById('newPassword').value.trim(),
-    fullname: document.getElementById('newFull_name').value.trim(),
+    fullname: document.getElementById('newFullname').value.trim(),
     role:     document.getElementById('newRole').value,
     email:    document.getElementById('newEmail').value.trim(),
   };
   if (!data.username || !data.password || !data.role) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
   const res = await api(data);
-  if (res.success) { alert('✅ เพิ่ม User สำเร็จ'); ['newUsername','newPassword','newFull_name','newEmail'].forEach(id=>document.getElementById(id).value=''); loadAdminUsers(); }
+  if (res.success) { alert('✅ เพิ่ม User สำเร็จ'); ['newUsername','newPassword','newFullname','newEmail'].forEach(id=>document.getElementById(id).value=''); loadAdminUsers(); }
   else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
 }
 

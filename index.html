@@ -782,9 +782,18 @@ async function donePM(planId) {
 
 // ===== HISTORY =====
 async function loadHistory() {
-  const machineId = document.getElementById('historyMachine')?.value || '';
-  const res = await api({ action: 'getHistory', machineId });
-  if (!res.success) return;
+  const res = await api({action:'getRepairs'});
+
+  let data = res.data || [];
+
+  // ✅ เอาเฉพาะ DONE
+  data = data.filter(x => x.STATUS === 'DONE');
+
+  console.log("History Data:", data);
+
+  renderTable(data);
+  renderCharts(data);
+}
 
   // Book Value
   const bookMap = {};

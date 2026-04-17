@@ -737,7 +737,7 @@ async function loadPMPlan() {
   </table>`;
 
   if (currentUser.role === 'PLANNING') {
-    const pending = pmPlans.filter(p => p.STATUS === 'PLANNED');
+    const pending = pmPlans.filter(p => p.STATUS === 'DONE');
     const confEl  = document.getElementById('planningConfirmList');
     if (!pending.length) { confEl.innerHTML = '<p class="text-success">✅ ยืนยันครบทุกแผนแล้ว</p>'; return; }
     confEl.innerHTML = pending.map(p=>`

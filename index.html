@@ -292,6 +292,20 @@ button {
         <div class="stat-box"><div class="stat-number" id="kpiMTTR">-</div><div class="stat-label">MTTR (ชม.)</div></div>
         <div class="stat-box"><div class="stat-number" id="kpiAvgCost">-</div><div class="stat-label">ค่าเฉลี่ย/ครั้ง</div></div>
       </div>
+     <div class="stat-box">
+  <div class="stat-number" id="kpiMTBF">-</div>
+  <div class="stat-label">MTBF (ชม.)</div>
+</div>
+
+<div class="stat-box">
+  <div class="stat-number" id="kpiDowntime">-</div>
+  <div class="stat-label">Downtime รวม (ชม.)</div>
+</div>
+
+<div class="stat-box">
+  <div class="stat-number" id="kpiAvailability">-</div>
+  <div class="stat-label">Availability (%)</div>
+</div>
       <!-- กราฟ -->
       <div class="grid-2">
         <div class="card"><div class="card-title">📊 ยอดซ่อมรายเดือน</div><div class="chart-container"><canvas id="chartRepairCount"></canvas></div></div>
@@ -931,7 +945,35 @@ function renderHistoryCharts(data) {
   chartCount = new Chart(document.getElementById('chartRepairCount'), cfg('จำนวนครั้ง', counts, '#4fc3f7'));
   chartCost  = new Chart(document.getElementById('chartRepairCost'),  cfg('ค่าซ่อม (บาท)', costs, '#ffa726'));
 }
+// 🔥 Total Downtime
+const totalDowntime = data.reduce((s,d)=>s+(+d.DOWNTIME||0),0);
 
+// 🔥 MTBF (เวลาระหว่างการเสีย)
+let mtbf = 0;
+if (data.length > 1) {
+  const sorted = data
+    .filter(d => d.FINISH_TIME)
+    .sort((a,b)=> new Date(a.FINISH_TIME) - new Date(b.FINISH_TIME));
+
+  let totalGap = 0;
+  for (let i = 1; i < sorted.length; i++) {
+    const t1 = new Date(sorted[i-1].FINISH_TIME);
+    const t2 = new Date(sorted[i].FINISH_TIME);
+    totalGap += (t2 - t1) / (1000 * 60 * 60);
+  }
+
+  mtbf = totalGap / (sorted.length - 1);
+}
+
+// 🔥 Availability
+const totalTime = 30 * 24; // สมมติ 30 วัน
+const operatingTime = totalTime - totalDowntime;
+const availability = (operatingTime / totalTime) * 100;
+
+// 🔥 แสดงผล
+document.getElementById('kpiMTBF').textContent = mtbf.toFixed(2);
+document.getElementById('kpiDowntime').textContent = totalDowntime.toFixed(2);
+document.getElementById('kpiAvailability').textContent = availability.toFixed(2);
 // ===== ADMIN =====
 function switchAdminTab(id, btn) {
   document.querySelectorAll('.admin-panel').forEach(el => el.classList.remove('active'));

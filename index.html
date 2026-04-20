@@ -286,6 +286,12 @@ button {
           <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadHistory()" style="width:100%">ค้นหา</button></div>
         </div>
       </div>
+      <div class="grid-4" id="historyKPI">
+        <div class="stat-box"><div class="stat-number" id="kpiTotalRepair">-</div><div class="stat-label">จำนวนงานซ่อม</div></div>
+        <div class="stat-box"><div class="stat-number" id="kpiTotalCost">-</div><div class="stat-label">ค่าใช้จ่ายรวม</div></div>
+        <div class="stat-box"><div class="stat-number" id="kpiMTTR">-</div><div class="stat-label">MTTR (ชม.)</div></div>
+        <div class="stat-box"><div class="stat-number" id="kpiAvgCost">-</div><div class="stat-label">ค่าเฉลี่ย/ครั้ง</div></div>
+      </div>
       <!-- กราฟ -->
       <div class="grid-2">
         <div class="card"><div class="card-title">📊 ยอดซ่อมรายเดือน</div><div class="chart-container"><canvas id="chartRepairCount"></canvas></div></div>
@@ -838,38 +844,40 @@ async function donePM(planId) {
 // ===== HISTORY =====
 async function loadHistory() {
   const res = await api({ action: 'getRepairs' });
-
   if (!res.success) return;
 
-  let data = res.data || [];
+  let data = (res.data || []).filter(x => x.STATUS === 'DONE');
 
-  data = data.filter(x => x.STATUS === 'DONE');
+  const totalRepair = data.length;
+  const totalCost = data.reduce((s,d)=>s+(+d.COST||0),0);
+  const avgCost = totalCost / (totalRepair || 1);
+  const avgMTTR = data.reduce((s,d)=>s+(+d.DOWNTIME||0),0)/(totalRepair||1);
 
-  console.log("History Data:", data);
+  document.getElementById('kpiTotalRepair').textContent = totalRepair;
+  document.getElementById('kpiTotalCost').textContent = totalCost.toLocaleString();
+  document.getElementById('kpiAvgCost').textContent = avgCost.toFixed(0);
+  document.getElementById('kpiMTTR').textContent = avgMTTR.toFixed(2);
 
   const bookMap = {};
   data.forEach(r => {
     if (!bookMap[r.MACHINE_ID]) bookMap[r.MACHINE_ID] = 0;
-    bookMap[r.MACHINE_ID] += (parseFloat(r.COST) || 0);
+    bookMap[r.MACHINE_ID] += (+r.COST || 0);
   });
 
   const bvEl = document.getElementById('bookValueList');
-  const bvList = Object.entries(bookMap).sort((a, b) => b[1] - a[1]);
-
-  bvEl.innerHTML = bvList.length
-    ? `<table>${bvList.map(([m, c]) =>
-        `<tr><td>${m}</td><td>${c.toLocaleString()}</td></tr>`
-      ).join('')}</table>`
+  bvEl.innerHTML = Object.keys(bookMap).length
+    ? `<table>${Object.entries(bookMap).map(([m,c])=>`<tr><td>${m}</td><td>${c.toLocaleString()}</td></tr>`).join('')}</table>`
     : 'ไม่มีข้อมูล';
 
   const hEl = document.getElementById('historyList');
   hEl.innerHTML = data.length
-    ? `<table>${data.map(r => `
-      <tr>
-        <td>${r.REPAIR_ID}</td>
+    ? `<table><tr><th>Machine</th><th>Symptom</th><th>Root Cause</th><th>Cost</th><th>Date</th></tr>
+      ${data.map(r => `<tr onclick='openRepairDetail(${JSON.stringify(r)})'>
         <td>${r.MACHINE_ID}</td>
-        <td>${r.ROOT_CAUSE || '-'}</td>
-        <td>${r.COST}</td>
+        <td>${r.SYMPTOM||'-'}</td>
+        <td>${r.ROOT_CAUSE||'-'}</td>
+        <td>${(+r.COST||0).toLocaleString()}</td>
+        <td>${formatDate(r.FINISH_TIME)}</td>
       </tr>`).join('')}</table>`
     : 'ไม่มีประวัติ';
 

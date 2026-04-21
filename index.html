@@ -862,16 +862,37 @@ async function loadHistory() {
 
   let data = (res.data || []).filter(x => x.STATUS === 'DONE');
 
+  // ===== KPI =====
   const totalRepair = data.length;
   const totalCost = data.reduce((s,d)=>s+(+d.COST||0),0);
   const avgCost = totalCost / (totalRepair || 1);
   const avgMTTR = data.reduce((s,d)=>s+(+d.DOWNTIME||0),0)/(totalRepair||1);
 
+  const totalDowntime = data.reduce((s,d)=>s+(+d.DOWNTIME||0),0);
+
+  let mtbf = 0;
+  const valid = data.filter(d => d.FINISH_TIME);
+  if (valid.length > 1) {
+    const sorted = [...valid].sort((a,b)=> new Date(a.FINISH_TIME) - new Date(b.FINISH_TIME));
+    let gap = 0;
+    for (let i = 1; i < sorted.length; i++) {
+      gap += (new Date(sorted[i].FINISH_TIME) - new Date(sorted[i-1].FINISH_TIME)) / 3600000;
+    }
+    mtbf = gap / (sorted.length - 1);
+  }
+
+  const totalTime = 30 * 24;
+  const availability = ((totalTime - totalDowntime) / totalTime) * 100;
+
   document.getElementById('kpiTotalRepair').textContent = totalRepair;
   document.getElementById('kpiTotalCost').textContent = totalCost.toLocaleString();
   document.getElementById('kpiAvgCost').textContent = avgCost.toFixed(0);
   document.getElementById('kpiMTTR').textContent = avgMTTR.toFixed(2);
+  document.getElementById('kpiMTBF').textContent = mtbf.toFixed(2);
+  document.getElementById('kpiDowntime').textContent = totalDowntime.toFixed(2);
+  document.getElementById('kpiAvailability').textContent = availability.toFixed(2);
 
+  // ===== เดิม =====
   const bookMap = {};
   data.forEach(r => {
     if (!bookMap[r.MACHINE_ID]) bookMap[r.MACHINE_ID] = 0;
@@ -945,35 +966,6 @@ function renderHistoryCharts(data) {
   chartCount = new Chart(document.getElementById('chartRepairCount'), cfg('จำนวนครั้ง', counts, '#4fc3f7'));
   chartCost  = new Chart(document.getElementById('chartRepairCost'),  cfg('ค่าซ่อม (บาท)', costs, '#ffa726'));
 }
-// 🔥 Total Downtime
-const totalDowntime = data.reduce((s,d)=>s+(+d.DOWNTIME||0),0);
-
-// 🔥 MTBF (เวลาระหว่างการเสีย)
-let mtbf = 0;
-if (data.length > 1) {
-  const sorted = data
-    .filter(d => d.FINISH_TIME)
-    .sort((a,b)=> new Date(a.FINISH_TIME) - new Date(b.FINISH_TIME));
-
-  let totalGap = 0;
-  for (let i = 1; i < sorted.length; i++) {
-    const t1 = new Date(sorted[i-1].FINISH_TIME);
-    const t2 = new Date(sorted[i].FINISH_TIME);
-    totalGap += (t2 - t1) / (1000 * 60 * 60);
-  }
-
-  mtbf = totalGap / (sorted.length - 1);
-}
-
-// 🔥 Availability
-const totalTime = 30 * 24; // สมมติ 30 วัน
-const operatingTime = totalTime - totalDowntime;
-const availability = (operatingTime / totalTime) * 100;
-
-// 🔥 แสดงผล
-document.getElementById('kpiMTBF').textContent = mtbf.toFixed(2);
-document.getElementById('kpiDowntime').textContent = totalDowntime.toFixed(2);
-document.getElementById('kpiAvailability').textContent = availability.toFixed(2);
 // ===== ADMIN =====
 function switchAdminTab(id, btn) {
   document.querySelectorAll('.admin-panel').forEach(el => el.classList.remove('active'));

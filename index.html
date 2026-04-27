@@ -836,7 +836,7 @@ async function loadPMPlan() {
   const thLabel  = pmViewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
   document.getElementById('pmMonthLabel').textContent = thLabel;
 
-  if (['MTN','ADMIN'].includes(currentUser.role))  document.getElementById('addPMPanel').style.display = 'block';
+  if (['ADMIN','ENGINEER'].includes(currentUser.role))  document.getElementById('addPMPanel').style.display = 'block';
   if (currentUser.role === 'PLANNING') document.getElementById('planningConfirmPanel').style.display = 'block';
 
   const res = await api({ action: 'getPMPlan', month: monthStr });

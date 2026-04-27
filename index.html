@@ -617,7 +617,7 @@ async function loadStatus() {
   let cR=0, cP=0, cB=0, cPM=0;
   machines.forEach(m => {
     const ar = repairs.find(r => r.MACHINE_ID === m.MACHINE_ID && (r.STATUS==='PENDING'||r.STATUS==='IN_PROGRESS'));
-    const hp = pmPlans.find(p => p.MACHINE_ID === m.MACHINE_ID && p.STATUS !== 'DONE');
+    const hp = pmPlans.find(p => p.MACHINE_ID === m.MACHINE_ID && p.STATUS === 'CONFIRMED');
     let st = 'ready';
     if      (ar && ar.STATUS==='IN_PROGRESS') { st='breakdown'; cB++; }
     else if (ar)  { st='pending'; cP++; }
@@ -901,6 +901,22 @@ async function confirmPlanByPlanning(planId) {
 }
 
 async function donePM(planId) {
+
+  const postpone = confirm("❓ ต้องการเลื่อนแผน PM ใช่หรือไม่? (กด OK = เลื่อน / Cancel = ทำแล้ว)");
+
+  if (postpone) {
+    const remark = prompt("กรอกเหตุผลในการเลื่อน:");
+    const res = await api({
+      action: 'updatePMPlan',
+      planId,
+      status: 'POSTPONED',
+      remark,
+      doneBy: currentUser.username
+    });
+    if (res.success) { loadPMPlan(); loadStatus(); }
+    return;
+  }
+
   const res = await api({ action: 'updatePMPlan', planId, status: 'DONE', doneBy: currentUser.username });
   if (res.success) { loadPMPlan(); loadStatus(); }
 }

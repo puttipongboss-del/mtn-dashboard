@@ -836,43 +836,90 @@ async function loadPMPlan() {
   const thLabel  = pmViewDate.toLocaleDateString('th-TH', { month: 'long', year: 'numeric' });
   document.getElementById('pmMonthLabel').textContent = thLabel;
 
-  if (['ADMIN','ENGINEER'].includes(currentUser.role))  document.getElementById('addPMPanel').style.display = 'block';
-  if (currentUser.role === 'PLANNING') document.getElementById('planningConfirmPanel').style.display = 'block';
+  // 🔥 normalize role
+  const role = String(currentUser.role || '').trim().toUpperCase();
 
+  // 🔥 กัน panel ค้าง
+  const addPanel = document.getElementById('addPMPanel');
+  const planningPanel = document.getElementById('planningConfirmPanel');
+
+  if (addPanel) addPanel.style.display = 'none';
+  if (planningPanel) planningPanel.style.display = 'none';
+
+  // 🔥 show ตามสิทธิ์
+  if (['ADMIN','ENGINEER'].includes(role)) {
+    if (addPanel) addPanel.style.display = 'block';
+  }
+
+  if (role === 'PLANNING') {
+    if (planningPanel) planningPanel.style.display = 'block';
+  }
+
+  // ===== LOAD DATA =====
   const res = await api({ action: 'getPMPlan', month: monthStr });
   if (!res.success) return;
-  pmPlans = res.data;
+
+  pmPlans = res.data || [];
 
   const el = document.getElementById('pmCalendar');
-  if (!pmPlans.length) { el.innerHTML = '<p class="empty-msg">ยังไม่มีแผน PM เดือนนี้</p>'; return; }
+  if (!pmPlans.length) {
+    el.innerHTML = '<p class="empty-msg">ยังไม่มีแผน PM เดือนนี้</p>';
+    return;
+  }
 
-  // ปุ่ม "ทำแล้ว" เฉพาะ MTN เท่านั้น (Phase 2)
-  const canDone   = currentUser.role === 'MTN';
-  const canAction = ['MTN','PLANNING','ADMIN'].includes(currentUser.role);
+  // 🔥 ใช้ role เดียวกันทั้งฟังก์ชัน
+  const canDone   = role === 'MTN';
+  const canAction = ['MTN','PLANNING','ADMIN'].includes(role);
 
   el.innerHTML = `<table>
-    <tr><th>Plan ID</th><th>เครื่อง</th><th>วันที่แผน</th><th>ผู้รับผิดชอบ</th><th>สถานะ</th>${canAction?'<th></th>':''}
+    <tr>
+      <th>Plan ID</th>
+      <th>เครื่อง</th>
+      <th>วันที่แผน</th>
+      <th>ผู้รับผิดชอบ</th>
+      <th>สถานะ</th>
+      ${canAction ? '<th></th>' : ''}
     </tr>
-    ${pmPlans.map(p=>`<tr>
-      <td>${p.PLAN_ID}</td><td>${p.MACHINE_ID}</td>
-      <td>${formatDate(p.PLAN_DATE)}</td><td>${p.ASSIGNED_TO}</td>
-      <td><span class="badge ${pmBadge(p.STATUS)}">${p.STATUS}</span></td>
-      ${canAction ? `<td>${canDone && p.STATUS!=='DONE' ? `<button class="btn btn-success btn-sm" onclick="donePM('${p.PLAN_ID}')">✅ ทำแล้ว</button>` : ''}</td>` : ''}
-    </tr>`).join('')}
+    ${pmPlans.map(p=>`
+      <tr>
+        <td>${p.PLAN_ID}</td>
+        <td>${p.MACHINE_ID}</td>
+        <td>${formatDate(p.PLAN_DATE)}</td>
+        <td>${p.ASSIGNED_TO}</td>
+        <td><span class="badge ${pmBadge(p.STATUS)}">${p.STATUS}</span></td>
+        ${canAction ? `<td>${
+          canDone && p.STATUS !== 'DONE'
+            ? `<button class="btn btn-success btn-sm" onclick="donePM('${p.PLAN_ID}')">✅ ทำแล้ว</button>`
+            : ''
+        }</td>` : ''}
+      </tr>
+    `).join('')}
   </table>`;
 
-  if (currentUser.role === 'PLANNING') {
+  // ===== PLANNING CONFIRM =====
+  if (role === 'PLANNING') {
     const pending = pmPlans.filter(p => p.STATUS === 'PLANNED');
     const confEl  = document.getElementById('planningConfirmList');
-    if (!pending.length) { confEl.innerHTML = '<p class="text-success">✅ ยืนยันครบทุกแผนแล้ว</p>'; return; }
+
+    if (!pending.length) {
+      confEl.innerHTML = '<p class="text-success">✅ ยืนยันครบทุกแผนแล้ว</p>';
+      return;
+    }
+
     confEl.innerHTML = pending.map(p=>`
       <div class="plan-confirm-card">
         <div class="detail-row"><span class="detail-label">Plan ID</span><span class="detail-value">${p.PLAN_ID}</span></div>
         <div class="detail-row"><span class="detail-label">เครื่อง</span><span class="detail-value">${p.MACHINE_ID}</span></div>
         <div class="detail-row"><span class="detail-label">วันที่แผน</span><span class="detail-value">${formatDate(p.PLAN_DATE)}</span></div>
         <div class="detail-row"><span class="detail-label">ผู้รับผิดชอบ</span><span class="detail-value">${p.ASSIGNED_TO}</span></div>
-        <div style="margin-top:10px"><button class="btn btn-success btn-sm" onclick="openPlanConfirm('${p.PLAN_ID}','${p.MACHINE_ID}','${p.PLAN_DATE}')">✅ ยืนยันทำได้ตามกำหนด</button></div>
-      </div>`).join('');
+        <div style="margin-top:10px">
+          <button class="btn btn-success btn-sm"
+            onclick="openPlanConfirm('${p.PLAN_ID}','${p.MACHINE_ID}','${p.PLAN_DATE}')">
+            ✅ ยืนยันทำได้ตามกำหนด
+          </button>
+        </div>
+      </div>
+    `).join('');
   }
 }
 

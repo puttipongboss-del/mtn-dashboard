@@ -619,7 +619,8 @@ async function loadStatus() {
     const ar = repairs.find(r => r.MACHINE_ID === m.MACHINE_ID && (r.STATUS==='PENDING'||r.STATUS==='IN_PROGRESS'));
     const hp = pmPlans.find(p => p.MACHINE_ID === m.MACHINE_ID && p.STATUS === 'CONFIRMED');
     let st = 'ready';
-    if      (ar && ar.STATUS==='IN_PROGRESS') { st='breakdown'; cB++; }
+    if (ar && ar.BREAKDOWN_TYPE === 'BREAKDOWN') { st='breakdown'; cB++; }
+    else if (ar && ar.BREAKDOWN_TYPE === 'WAITING') { st='pending'; cP++; }
     else if (ar)  { st='pending'; cP++; }
     else if (hp)  { st='pm';      cPM++; }
     else          cR++;
@@ -759,10 +760,38 @@ function openRepairModal(repairId) {
   document.getElementById('repairModalTitle').textContent = `อัพเดท: ${repairId} — ${r.MACHINE_ID}`;
   let body = '';
   if (r.STATUS === 'PENDING') {
-    body = `<p style="color:#aaa;margin-bottom:12px">กดรับงานเพื่อเปลี่ยนสถานะเป็น "กำลังซ่อม"</p>`;
-    document.getElementById('modalSaveBtn').textContent = '✅ รับงาน';
-    document.getElementById('modalSaveBtn').onclick = () => acceptRepair(repairId);
-  } else {
+  body = `
+    <div class="form-group">
+      <label>ประเภทงานเสีย</label>
+      <select id="mType" class="form-control">
+        <option value="BREAKDOWN">🔴 จอดทันที</option>
+        <option value="WAITING">🟡 ยังเดินต่อ</option>
+      </select>
+    </div>
+
+    <div id="waitingBox" style="display:none">
+      <div class="form-group">
+        <label>วันที่จะซ่อม</label>
+        <input type="date" id="mPlanDate" class="form-control">
+      </div>
+      <div class="form-group">
+        <label>หมายเหตุ</label>
+        <input type="text" id="mRemark" class="form-control">
+      </div>
+    </div>
+  `;
+
+  document.getElementById('modalSaveBtn').textContent = '✅ รับงาน';
+  document.getElementById('modalSaveBtn').onclick = () => acceptRepairAdvanced(repairId);
+
+  setTimeout(() => {
+    const typeEl = document.getElementById('mType');
+    const box = document.getElementById('waitingBox');
+    typeEl.addEventListener('change', () => {
+      box.style.display = typeEl.value === 'WAITING' ? 'block' : 'none';
+    });
+  }, 100);
+} else {
     body = `<div class="form-group"><label>สาเหตุการเกิด</label><textarea class="form-control" id="mRootCause" rows="2"></textarea></div><div class="form-group"><label>วิธีแก้ไข</label><textarea class="form-control" id="mSolution" rows="2"></textarea></div><div class="form-group"><label>ค่าใช้จ่าย (บาท)</label><input type="number" class="form-control" id="mCost" /></div>`;
     document.getElementById('modalSaveBtn').textContent = '✅ บันทึกซ่อมเสร็จ';
     document.getElementById('modalSaveBtn').onclick = () => doneRepair(repairId);
@@ -794,8 +823,28 @@ function openRepairModal(repairId) {
 }
 
 async function acceptRepair(repairId) {
-  const res = await api({ action: 'updateRepair', repairId, status: 'IN_PROGRESS', receivedBy: currentUser.username });
-  if (res.success) { closeModal('repairModal'); loadRepairs(); loadStatus(); }
+  try {
+    const res = await api({
+      action: 'updateRepair',
+      repairId: repairId,
+      status: 'IN_PROGRESS',
+      receivedBy: currentUser.username
+    });
+
+    if (!res.success) {
+      alert('❌ รับงานไม่สำเร็จ');
+      return;
+    }
+
+    closeModal('repairModal');
+    loadRepairs();
+    loadStatus();
+
+  } catch (err) {
+    console.error(err);
+    alert('❌ API ERROR');
+  }
+}
 }
 
 async function doneRepair(repairId) {
@@ -1191,9 +1240,23 @@ async function adminDonePM(planId) {
 }
 
 // ===== HELPERS =====
-async function api(payload) {
-  const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
-  return res.json();
+async function api(data) {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify(data)
+    });
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch (err) {
+    console.error('API ERROR:', err);
+    alert('❌ ติดต่อ server ไม่ได้');
+    return { success: false };
+  }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 function statusBadge(s) { return s==='PENDING'?'badge-pending':s==='IN_PROGRESS'?'badge-progress':s==='DONE'?'badge-ready':''; }

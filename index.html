@@ -768,7 +768,29 @@ function openRepairModal(repairId) {
     document.getElementById('modalSaveBtn').onclick = () => doneRepair(repairId);
   }
   document.getElementById('repairModalBody').innerHTML = body;
-  document.getElementById('repairModal').classList.add('show');
+  
+    setTimeout(() => {
+      const btn = document.getElementById('modalSaveBtn');
+
+      const validate = () => {
+        const root = document.getElementById('mRootCause')?.value.trim();
+        const sol  = document.getElementById('mSolution')?.value.trim();
+        const cost = document.getElementById('mCost')?.value;
+
+        btn.disabled = !(root && sol && cost);
+        btn.style.opacity = btn.disabled ? 0.5 : 1;
+      };
+
+      ['mRootCause','mSolution','mCost'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', validate);
+      });
+
+      validate();
+    }, 100);
+
+    document.getElementById('repairModal').classList.add('show');
+
 }
 
 async function acceptRepair(repairId) {
@@ -777,8 +799,32 @@ async function acceptRepair(repairId) {
 }
 
 async function doneRepair(repairId) {
-  const res = await api({ action: 'updateRepair', repairId, status: 'DONE', rootCause: document.getElementById('mRootCause').value, solution: document.getElementById('mSolution').value, cost: document.getElementById('mCost').value });
-  if (res.success) { closeModal('repairModal'); loadRepairs(); loadStatus(); }
+  const rootCause = document.getElementById('mRootCause').value.trim();
+  const solution  = document.getElementById('mSolution').value.trim();
+  const cost      = document.getElementById('mCost').value;
+
+  if (!rootCause || !solution || !cost) {
+    alert('❌ กรุณากรอก สาเหตุ / วิธีแก้ / ราคา ให้ครบ');
+    return;
+  }
+
+  const res = await api({
+    action: 'updateRepair',
+    repairId,
+    status: 'DONE',
+    rootCause,
+    solution,
+    cost
+  });
+
+  if (res.success) {
+    closeModal('repairModal');
+    loadRepairs();
+    loadStatus();
+    loadHistory();
+  } else {
+    alert('❌ บันทึกไม่สำเร็จ');
+  }
 }
 
 // ===== PM PLAN =====

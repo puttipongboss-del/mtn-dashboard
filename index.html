@@ -777,75 +777,63 @@ function openRepairModal(repairId) {
   const r = repairs.find(x => x.REPAIR_ID === repairId);
   document.getElementById('modalRepairId').value = repairId;
   document.getElementById('repairModalTitle').textContent = `อัพเดท: ${repairId} — ${r.MACHINE_ID}`;
-  let body = '';
+
+  // clone ปุ่มเพื่อล้าง event listener เก่าออก
+  const oldBtn = document.getElementById('modalSaveBtn');
+  const btn = oldBtn.cloneNode(true);
+  oldBtn.parentNode.replaceChild(btn, oldBtn);
+  btn.disabled = false;
+  btn.style.opacity = '1';
+
   if (r.STATUS === 'PENDING') {
-  body = `
-    <div class="form-group">
-      <label>ประเภทงานเสีย</label>
-      <select id="mType" class="form-control">
-        <option value="BREAKDOWN">🔴 จอดทันที</option>
-        <option value="WAITING">🟡 ยังเดินต่อ</option>
-      </select>
-    </div>
-
-    <div id="waitingBox" style="display:none">
+    document.getElementById('repairModalBody').innerHTML = `
       <div class="form-group">
-        <label>วันที่จะซ่อม</label>
-        <input type="date" id="mPlanDate" class="form-control">
+        <label>ประเภทงานเสีย</label>
+        <select id="mType" class="form-control">
+          <option value="BREAKDOWN">🔴 จอดทันที</option>
+          <option value="WAITING">🟡 ยังเดินต่อ</option>
+        </select>
       </div>
-      <div class="form-group">
-        <label>หมายเหตุ</label>
-        <input type="text" id="mRemark" class="form-control">
+      <div id="waitingBox" style="display:none">
+        <div class="form-group">
+          <label>วันที่จะซ่อม</label>
+          <input type="date" id="mPlanDate" class="form-control">
+        </div>
+        <div class="form-group">
+          <label>หมายเหตุ</label>
+          <input type="text" id="mRemark" class="form-control">
+        </div>
       </div>
-    </div>
-  `;
-
-  document.getElementById('modalSaveBtn').textContent = '✅ รับงาน';
-  document.getElementById('modalSaveBtn').onclick = () => acceptRepairAdvanced(repairId);
-
-  setTimeout(() => {
-    const typeEl = document.getElementById('mType');
-    const box = document.getElementById('waitingBox');
-    typeEl.addEventListener('change', () => {
-      box.style.display = typeEl.value === 'WAITING' ? 'block' : 'none';
+    `;
+    btn.textContent = '✅ รับงาน';
+    btn.onclick = () => acceptRepairAdvanced(repairId);
+    document.getElementById('mType').addEventListener('change', function() {
+      document.getElementById('waitingBox').style.display = this.value === 'WAITING' ? 'block' : 'none';
     });
-  }, 100);
-} else {
-    body = `<div class="form-group"><label>สาเหตุการเกิด</label><textarea class="form-control" id="mRootCause" rows="2"></textarea></div><div class="form-group"><label>วิธีแก้ไข</label><textarea class="form-control" id="mSolution" rows="2"></textarea></div><div class="form-group"><label>ค่าใช้จ่าย (บาท)</label><input type="number" class="form-control" id="mCost" /></div>`;
-    document.getElementById('modalSaveBtn').textContent = '✅ บันทึกซ่อมเสร็จ';
-    document.getElementById('modalSaveBtn').onclick = () => doneRepair(repairId);
-  }
-  document.getElementById('repairModalBody').innerHTML = body;
-
-  if (r.STATUS !== 'PENDING') {
-    setTimeout(() => {
-      const btn = document.getElementById('modalSaveBtn');
-
-      const validate = () => {
-        const root = document.getElementById('mRootCause')?.value.trim();
-        const sol  = document.getElementById('mSolution')?.value.trim();
-        const cost = document.getElementById('mCost')?.value;
-
-        btn.disabled = !(root && sol && cost);
-        btn.style.opacity = btn.disabled ? 0.5 : 1;
-      };
-
-      ['mRootCause','mSolution','mCost'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('input', validate);
-      });
-
-      validate();
-    }, 100);
   } else {
-    // PENDING → ปุ่มรับงานไม่ต้อง disable
-    const btn = document.getElementById('modalSaveBtn');
-    btn.disabled = false;
-    btn.style.opacity = 1;
+    document.getElementById('repairModalBody').innerHTML = `
+      <div class="form-group"><label>สาเหตุการเกิด</label><textarea class="form-control" id="mRootCause" rows="2"></textarea></div>
+      <div class="form-group"><label>วิธีแก้ไข</label><textarea class="form-control" id="mSolution" rows="2"></textarea></div>
+      <div class="form-group"><label>ค่าใช้จ่าย (บาท)</label><input type="number" class="form-control" id="mCost" /></div>
+    `;
+    btn.textContent = '✅ บันทึกซ่อมเสร็จ';
+    btn.onclick = () => doneRepair(repairId);
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    const validate = () => {
+      const root = document.getElementById('mRootCause')?.value.trim();
+      const sol  = document.getElementById('mSolution')?.value.trim();
+      const cost = document.getElementById('mCost')?.value;
+      btn.disabled = !(root && sol && cost);
+      btn.style.opacity = btn.disabled ? '0.5' : '1';
+    };
+    ['mRootCause','mSolution','mCost'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', validate);
+    });
   }
 
-    document.getElementById('repairModal').classList.add('show');
-
+  document.getElementById('repairModal').classList.add('show');
 }
 
 async function acceptRepair(repairId) {

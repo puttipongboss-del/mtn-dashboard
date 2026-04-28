@@ -230,7 +230,7 @@ button {
       <div class="grid-2">
         <div class="card">
           <div class="card-title">📋 แจ้งซ่อมใหม่</div>
-          <div class="form-group"><label>เครื่องที่เสีย</label><select class="form-control" id="repairMachine"></select></div>
+          <div class="form-group"><label>เครื่องที่เสีย</label><select class="form-control" id="repairMachine"></select></div><div class="form-group"><label>ส่วนที่เสีย</label><select class="form-control" id="componentSelect"><option value="">-- เลือกส่วนที่เสีย --</option></select></div>
           <div class="form-group"><label>อาการเสีย</label><textarea class="form-control" id="repairSymptom" rows="4" placeholder="อธิบายอาการเสีย..."></textarea></div>
           <button class="btn btn-danger btn-full" onclick="confirmRepair()">🔴 แจ้งซ่อม</button>
         </div>
@@ -584,6 +584,13 @@ function populateMachineDropdowns() {
       el.appendChild(opt);
     });
   });
+
+  const machineEl = document.getElementById('repairMachine');
+  if (machineEl) {
+    machineEl.addEventListener('change', (e) => {
+      loadComponentsByMachine(e.target.value);
+    });
+  }
 }
 
 function populatePMMultiSelect() {
@@ -712,6 +719,17 @@ function openMachineModal(machineId) {
   document.getElementById('machineModal').classList.add('show');
 }
 
+
+async function loadComponentsByMachine(machineId) {
+  const res = await api({ action: 'getMachines' });
+  if (!res.success) return;
+  const machine = res.data.find(m => m.MACHINE_ID === machineId);
+  if (!machine) return;
+  const components = (machine.COMPONENTS || '').split(',');
+  const el = document.getElementById('componentSelect');
+  el.innerHTML = components.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
 // ===== REPAIR =====
 async function loadRepairs() {
   const res = await api({ action: 'getRepairs' });
@@ -750,7 +768,8 @@ async function submitRepair() {
   closeModal('confirmRepairModal');
   const machineId = document.getElementById('repairMachine').value;
   const symptom   = document.getElementById('repairSymptom').value.trim();
-  const res = await api({ action: 'addRepair', machineId, symptom, reportedBy: currentUser.username });
+  const component = document.getElementById('componentSelect')?.value || '';
+  const res = await api({ action: 'addRepair', machineId, symptom, component, reportedBy: currentUser.username });
   if (res.success) { alert(`✅ แจ้งซ่อมสำเร็จ\nเลขที่: ${res.repairId}`); document.getElementById('repairSymptom').value = ''; loadRepairs(); loadStatus(); }
 }
 

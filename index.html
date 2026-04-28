@@ -864,6 +864,42 @@ async function acceptRepair(repairId) {
     alert('❌ API ERROR');
   }
 }
+
+async function acceptRepairAdvanced(repairId) {
+  const type = document.getElementById('mType').value;
+  const planDate = document.getElementById('mPlanDate')?.value || '';
+  const remark = document.getElementById('mRemark')?.value || '';
+
+  if (type === 'WAITING' && !planDate) {
+    alert('กรุณาเลือกวันที่จะซ่อม');
+    return;
+  }
+
+  try {
+    const res = await api({
+      action: 'updateRepair',
+      repairId: repairId,
+      status: 'IN_PROGRESS',
+      breakdownType: type,
+      planDate: planDate,
+      remark: remark,
+      receivedBy: currentUser.username
+    });
+
+    if (res.success) {
+      closeModal('repairModal');
+      loadRepairs();
+      loadStatus();
+    } else {
+      alert('❌ รับงานไม่สำเร็จ');
+    }
+  } catch (err) {
+    console.error(err);
+    alert('❌ API ERROR');
+  }
+}
+
+
 async function doneRepair(repairId) {
   const rootCause = document.getElementById('mRootCause').value.trim();
   const solution  = document.getElementById('mSolution').value.trim();

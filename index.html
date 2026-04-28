@@ -816,7 +816,8 @@ function openRepairModal(repairId) {
     document.getElementById('modalSaveBtn').onclick = () => doneRepair(repairId);
   }
   document.getElementById('repairModalBody').innerHTML = body;
-  
+
+  if (r.STATUS !== 'PENDING') {
     setTimeout(() => {
       const btn = document.getElementById('modalSaveBtn');
 
@@ -836,6 +837,12 @@ function openRepairModal(repairId) {
 
       validate();
     }, 100);
+  } else {
+    // PENDING → ปุ่มรับงานไม่ต้อง disable
+    const btn = document.getElementById('modalSaveBtn');
+    btn.disabled = false;
+    btn.style.opacity = 1;
+  }
 
     document.getElementById('repairModal').classList.add('show');
 

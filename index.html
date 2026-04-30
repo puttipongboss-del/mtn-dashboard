@@ -523,6 +523,7 @@ async function startApp() {
   document.getElementById('navRole').textContent = currentUser.role;
   buildTabs();
   await loadMachines();
+  await loadUsers();
   loadStatus();
   loadRepairs();
   loadPMPlan();
@@ -574,6 +575,14 @@ function switchTab(id, btn) {
 }
 
 // ===== MACHINES =====
+
+async function loadUsers() {
+  const res = await api({ action: 'getUsers' });
+  if (res.success) {
+    allUsers = res.data;
+  }
+}
+
 async function loadMachines() {
   const res = await api({ action: 'getMachines' });
   if (res.success) { machines = res.data; populateMachineDropdowns(); populatePMMultiSelect(); }
@@ -1349,7 +1358,8 @@ async function addMachine() {
   };
   if (!data.machineId || !data.machineName) { alert('กรุณากรอกข้อมูลให้ครบ'); return; }
   const res = await api(data);
-  if (res.success) { alert('✅ เพิ่มเครื่องจักรสำเร็จ'); ['newMachineId','newMachineName','newMachineGroup'].forEach(id=>document.getElementById(id).value=''); await loadMachines(); loadAdminMachines(); }
+  if (res.success) { alert('✅ เพิ่มเครื่องจักรสำเร็จ'); ['newMachineId','newMachineName','newMachineGroup'].forEach(id=>document.getElementById(id).value=''); await loadMachines();
+  await loadUsers(); loadAdminMachines(); }
   else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
 }
 
@@ -1366,7 +1376,8 @@ async function doDelete(type, id) {
   if (res.success) {
     alert('✅ ลบสำเร็จ');
     if (type === 'user')    loadAdminUsers();
-    if (type === 'machine') { await loadMachines(); loadAdminMachines(); }
+    if (type === 'machine') { await loadMachines();
+  await loadUsers(); loadAdminMachines(); }
     if (type === 'pm')      loadAdminPMPlan();
   } else alert('❌ ' + (res.message||'เกิดข้อผิดพลาด'));
 }

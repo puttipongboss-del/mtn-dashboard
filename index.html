@@ -126,6 +126,47 @@ button {
   .stat-label  { font-size: 12px; color: #888; margin-top: 4px; }
   .stat-hint   { font-size: 10px; color: #555; margin-top: 4px; }
 
+  /* ===== KPI CARDS — History page ===== */
+  .kpi-row1 { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
+  .kpi-row2 { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  @media (max-width:900px) { .kpi-row1 { grid-template-columns: repeat(2,1fr); } .kpi-row2 { grid-template-columns: repeat(3,1fr); } }
+  @media (max-width:600px) { .kpi-row1,.kpi-row2 { grid-template-columns: 1fr 1fr; } }
+
+  .kpi-card {
+    position: relative; overflow: hidden;
+    background: rgba(15,25,35,0.85);
+    border: 1px solid rgba(79,195,247,0.15);
+    border-radius: 14px; padding: 20px 20px 16px;
+    transition: 0.2s;
+  }
+  .kpi-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, #4fc3f7, #00e5ff);
+    border-radius: 14px 14px 0 0;
+  }
+  .kpi-card:hover { border-color: rgba(79,195,247,0.4); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(79,195,247,0.08); }
+  .kpi-card.accent-orange::before { background: linear-gradient(90deg,#ffa726,#ffcc02); }
+  .kpi-card.accent-orange { border-color: rgba(255,167,38,0.18); }
+  .kpi-card.accent-orange:hover { border-color: rgba(255,167,38,0.4); box-shadow: 0 8px 24px rgba(255,167,38,0.08); }
+  .kpi-card.accent-red::before { background: linear-gradient(90deg,#ef5350,#ff7043); }
+  .kpi-card.accent-red { border-color: rgba(239,83,80,0.18); }
+  .kpi-card.accent-red:hover { border-color: rgba(239,83,80,0.4); box-shadow: 0 8px 24px rgba(239,83,80,0.08); }
+  .kpi-card.accent-green::before { background: linear-gradient(90deg,#66bb6a,#00e676); }
+  .kpi-card.accent-green { border-color: rgba(102,187,106,0.18); }
+  .kpi-card.accent-green:hover { border-color: rgba(102,187,106,0.4); box-shadow: 0 8px 24px rgba(102,187,106,0.08); }
+  .kpi-card.accent-purple::before { background: linear-gradient(90deg,#ab47bc,#e040fb); }
+  .kpi-card.accent-purple { border-color: rgba(171,71,188,0.18); }
+  .kpi-card.accent-purple:hover { border-color: rgba(171,71,188,0.4); box-shadow: 0 8px 24px rgba(171,71,188,0.08); }
+
+  .kpi-icon { font-size: 20px; margin-bottom: 10px; display: block; opacity: 0.85; }
+  .kpi-num  { font-size: 32px; font-weight: 800; color: #4fc3f7; letter-spacing: -0.5px; line-height: 1.1; }
+  .kpi-row2 .kpi-num { font-size: 26px; }
+  .kpi-card.accent-orange .kpi-num { color: #ffa726; }
+  .kpi-card.accent-red    .kpi-num { color: #ef5350; }
+  .kpi-card.accent-green  .kpi-num { color: #66bb6a; }
+  .kpi-card.accent-purple .kpi-num { color: #ce93d8; }
+  .kpi-lbl  { font-size: 11px; color: #6a8fa8; margin-top: 7px; font-weight: 500; letter-spacing: 0.4px; text-transform: uppercase; }
+
   .machine-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; font-size: 12px; cursor: pointer; transition: 0.2s; }
   .machine-card:hover { background: rgba(79,195,247,0.08); border-color: rgba(79,195,247,0.3); transform: translateY(-2px); }
   .machine-card .mc-name { font-weight: 600; margin-bottom: 4px; font-size: 13px; }
@@ -358,26 +399,47 @@ button {
         </div>
       </div>
 
-      <div class="grid-4" id="historyKPI">
-        <div class="stat-box"><div class="stat-number" id="kpiTotalRepair">-</div><div class="stat-label">จำนวนงานซ่อม</div></div>
-        <div class="stat-box"><div class="stat-number" id="kpiTotalCost">-</div><div class="stat-label">ค่าใช้จ่ายรวม</div></div>
-        <div class="stat-box"><div class="stat-number" id="kpiMTTR">-</div><div class="stat-label">MTTR (ชม.)</div></div>
-        <div class="stat-box"><div class="stat-number" id="kpiAvgCost">-</div><div class="stat-label">ค่าเฉลี่ย/ครั้ง</div></div>
+      <!-- KPI Row 1 — 4 ตัวหลัก -->
+      <div class="kpi-row1" id="historyKPI">
+        <div class="kpi-card">
+          <span class="kpi-icon">🔧</span>
+          <div class="kpi-num" id="kpiTotalRepair">-</div>
+          <div class="kpi-lbl">จำนวนงานซ่อม</div>
+        </div>
+        <div class="kpi-card accent-orange">
+          <span class="kpi-icon">💰</span>
+          <div class="kpi-num" id="kpiTotalCost">-</div>
+          <div class="kpi-lbl">ค่าใช้จ่ายรวม (฿)</div>
+        </div>
+        <div class="kpi-card accent-red">
+          <span class="kpi-icon">⏱️</span>
+          <div class="kpi-num" id="kpiMTTR">-</div>
+          <div class="kpi-lbl">MTTR (ชม.)</div>
+        </div>
+        <div class="kpi-card accent-orange">
+          <span class="kpi-icon">📊</span>
+          <div class="kpi-num" id="kpiAvgCost">-</div>
+          <div class="kpi-lbl">ค่าเฉลี่ย/ครั้ง (฿)</div>
+        </div>
       </div>
-     <div class="stat-box">
-  <div class="stat-number" id="kpiMTBF">-</div>
-  <div class="stat-label">MTBF (ชม.)</div>
-</div>
-
-<div class="stat-box">
-  <div class="stat-number" id="kpiDowntime">-</div>
-  <div class="stat-label">Downtime รวม (ชม.)</div>
-</div>
-
-<div class="stat-box">
-  <div class="stat-number" id="kpiAvailability">-</div>
-  <div class="stat-label">Availability (%)</div>
-</div>
+      <!-- KPI Row 2 — 3 ตัวรอง -->
+      <div class="kpi-row2">
+        <div class="kpi-card accent-purple">
+          <span class="kpi-icon">🔄</span>
+          <div class="kpi-num" id="kpiMTBF">-</div>
+          <div class="kpi-lbl">MTBF (ชม.)</div>
+        </div>
+        <div class="kpi-card accent-red">
+          <span class="kpi-icon">📉</span>
+          <div class="kpi-num" id="kpiDowntime">-</div>
+          <div class="kpi-lbl">Downtime รวม (ชม.)</div>
+        </div>
+        <div class="kpi-card accent-green">
+          <span class="kpi-icon">✅</span>
+          <div class="kpi-num" id="kpiAvailability">-</div>
+          <div class="kpi-lbl">Availability (%)</div>
+        </div>
+      </div>
       <!-- กราฟ -->
       <div class="grid-2">
         <div class="card"><div class="card-title">📊 ยอดซ่อมรายเดือน</div><div class="chart-container"><canvas id="chartRepairCount"></canvas></div></div>

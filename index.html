@@ -178,6 +178,45 @@ button {
   .empty-msg { color: #888; font-size: 13px; padding: 8px 0; }
   .text-success { color: #66bb6a; }
   .text-danger  { color: #ef5350; }
+
+  /* ===== BREAKDOWN TYPE SELECTOR ===== */
+  .btype-group { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+  .btype-btn {
+    flex: 1; min-width: 100px; padding: 10px 8px; border-radius: 10px; border: 2px solid transparent;
+    cursor: pointer; font-size: 12px; font-weight: 700; text-align: center; transition: all 0.18s;
+    background: rgba(255,255,255,0.06);
+    color: #aaa;
+  }
+  .btype-btn:hover { transform: translateY(-1px); }
+  .btype-btn.selected-BREAKDOWN { background: rgba(239,83,80,0.18); border-color: #ef5350; color: #ef5350; }
+  .btype-btn.selected-WAITING   { background: rgba(255,167,38,0.18); border-color: #ffa726; color: #ffa726; }
+  .btype-btn.selected-REPAIRING { background: rgba(79,195,247,0.18); border-color: #4fc3f7; color: #4fc3f7; }
+
+  /* badge สำหรับ BREAKDOWN_TYPE */
+  .badge-breakdown { background: rgba(239,83,80,0.2);  color: #ef5350; border: 1px solid #ef5350; }
+  .badge-waiting   { background: rgba(255,167,38,0.2); color: #ffa726; border: 1px solid #ffa726; }
+  .badge-repairing { background: rgba(79,195,247,0.2); color: #4fc3f7; border: 1px solid #4fc3f7; }
+
+  /* ===== TOP BREAKDOWN SECTION ===== */
+  .top-bd-section { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  @media (max-width: 700px) { .top-bd-section { grid-template-columns: 1fr; } }
+  .top-bd-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; }
+  .top-bd-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+  .top-bd-filter { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .top-bd-filter-btn {
+    padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15);
+    background: transparent; color: #888; font-size: 11px; cursor: pointer; transition: 0.15s;
+  }
+  .top-bd-filter-btn.active { background: rgba(79,195,247,0.15); border-color: #4fc3f7; color: #4fc3f7; }
+  .top-bd-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .top-bd-row:last-child { border-bottom: none; }
+  .top-bd-rank { font-size: 13px; font-weight: 700; width: 22px; text-align: center; flex-shrink: 0; }
+  .top-bd-rank.r1 { color: #ffd700; } .top-bd-rank.r2 { color: #c0c0c0; } .top-bd-rank.r3 { color: #cd7f32; }
+  .top-bd-mc { flex: 1; font-size: 13px; }
+  .top-bd-mc-name { font-size: 10px; color: #888; }
+  .top-bd-bar-wrap { width: 80px; background: rgba(255,255,255,0.06); border-radius: 4px; height: 6px; flex-shrink: 0; }
+  .top-bd-bar { height: 6px; border-radius: 4px; transition: width 0.4s; }
+  .top-bd-val { font-size: 13px; font-weight: 700; min-width: 36px; text-align: right; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -297,6 +336,28 @@ button {
           <div class="form-group"><label>&nbsp;</label><button class="btn btn-primary" onclick="loadHistory()" style="width:100%">ค้นหา</button></div>
         </div>
       </div>
+      <!-- TOP BREAKDOWN -->
+      <div class="top-bd-section" id="topBreakdownSection">
+        <!-- Top 5 Breakdown Count -->
+        <div class="top-bd-card">
+          <div class="top-bd-title" style="color:#ef5350">🔴 Top 5 Breakdown (จำนวนครั้ง)</div>
+          <div class="top-bd-filter" id="topBdFilter">
+            <button class="top-bd-filter-btn active" onclick="setTopBdFilter('all',this)">ทั้งหมด</button>
+            <button class="top-bd-filter-btn" onclick="setTopBdFilter('month',this)" id="topBdMonthBtn">เดือนนี้</button>
+          </div>
+          <div id="topBdList"><div class="loading" style="padding:20px">กำลังโหลด...</div></div>
+        </div>
+        <!-- Top 5 Downtime -->
+        <div class="top-bd-card">
+          <div class="top-bd-title" style="color:#ffa726">⏱️ Top 5 Downtime รวม (ชม.)</div>
+          <div class="top-bd-filter" id="topDtFilter">
+            <button class="top-bd-filter-btn active" onclick="setTopDtFilter('all',this)">ทั้งหมด</button>
+            <button class="top-bd-filter-btn" onclick="setTopDtFilter('month',this)" id="topDtMonthBtn">เดือนนี้</button>
+          </div>
+          <div id="topDtList"><div class="loading" style="padding:20px">กำลังโหลด...</div></div>
+        </div>
+      </div>
+
       <div class="grid-4" id="historyKPI">
         <div class="stat-box"><div class="stat-number" id="kpiTotalRepair">-</div><div class="stat-label">จำนวนงานซ่อม</div></div>
         <div class="stat-box"><div class="stat-number" id="kpiTotalCost">-</div><div class="stat-label">ค่าใช้จ่ายรวม</div></div>
@@ -643,6 +704,7 @@ async function loadStatus() {
     const hp = pmPlans.find(p => p.MACHINE_ID === m.MACHINE_ID && p.STATUS === 'CONFIRMED');
     let st = 'ready';
     if (ar && ar.BREAKDOWN_TYPE === 'BREAKDOWN') { st='breakdown'; cB++; }
+    else if (ar && ar.BREAKDOWN_TYPE === 'REPAIRING') { st='breakdown'; cB++; }
     else if (ar && ar.BREAKDOWN_TYPE === 'WAITING') { st='pending'; cP++; }
     else if (ar)  { st='pending'; cP++; }
     else if (hp)  { st='pm';      cPM++; }
@@ -769,7 +831,16 @@ function renderAllRepairs(list) {
   const el = document.getElementById('allRepairList');
   const pending = list.filter(r => r.STATUS !== 'DONE');
   if (!pending.length) { el.innerHTML = '<p class="empty-msg">ไม่มีงานค้าง ✅</p>'; return; }
-  el.innerHTML = `<table><tr><th>เลขที่</th><th>เครื่อง</th><th>อาการ</th><th>แจ้งโดย</th><th>สถานะ</th><th>เวลาแจ้ง</th><th></th></tr>${pending.map(r=>`<tr><td>${r.REPAIR_ID}</td><td>${r.MACHINE_ID}</td><td>${r.SYMPTOM}</td><td>${r.REPORTED_BY}</td><td><span class="badge ${statusBadge(r.STATUS)}">${statusText(r.STATUS)}</span></td><td style="font-size:11px">${formatDate(r.REPORT_TIME)}</td><td><button class="btn btn-warning btn-sm" onclick="openRepairModal('${r.REPAIR_ID}')">อัพเดท</button></td></tr>`).join('')}</table>`;
+  el.innerHTML = `<table><tr><th>เลขที่</th><th>เครื่อง</th><th>อาการ</th><th>แจ้งโดย</th><th>ประเภท</th><th>สถานะ</th><th>เวลาแจ้ง</th><th></th></tr>${pending.map(r=>`<tr>
+    <td>${r.REPAIR_ID}</td>
+    <td>${r.MACHINE_ID}</td>
+    <td>${r.SYMPTOM}</td>
+    <td>${r.REPORTED_BY}</td>
+    <td>${r.BREAKDOWN_TYPE ? `<span class="badge ${btypeBadge(r.BREAKDOWN_TYPE)}">${btypeText(r.BREAKDOWN_TYPE)}</span>` : '-'}</td>
+    <td><span class="badge ${statusBadge(r.STATUS)}">${statusText(r.STATUS)}</span></td>
+    <td style="font-size:11px">${formatDate(r.REPORT_TIME)}</td>
+    <td><button class="btn btn-warning btn-sm" onclick="openRepairModal('${r.REPAIR_ID}')">อัพเดท</button></td>
+  </tr>`).join('')}</table>`;
 }
 
 function confirmRepair() {
@@ -811,10 +882,12 @@ function openRepairModal(repairId) {
     document.getElementById('repairModalBody').innerHTML = `
       <div class="form-group">
         <label>ประเภทงานเสีย</label>
-        <select id="mType" class="form-control">
-          <option value="BREAKDOWN">🔴 จอดทันที</option>
-          <option value="WAITING">🟡 ยังเดินต่อ</option>
-        </select>
+        <div class="btype-group">
+          <button class="btype-btn selected-BREAKDOWN" data-type="BREAKDOWN" onclick="selectBtype(this)">🔴 จอดทันที<br><span style="font-size:10px;font-weight:400">Breakdown</span></button>
+          <button class="btype-btn" data-type="WAITING" onclick="selectBtype(this)">🟡 รอซ่อม<br><span style="font-size:10px;font-weight:400">ยังผลิตต่อได้</span></button>
+          <button class="btype-btn" data-type="REPAIRING" onclick="selectBtype(this)">🔵 กำลังซ่อม<br><span style="font-size:10px;font-weight:400">ลงมือซ่อมแล้ว</span></button>
+        </div>
+        <input type="hidden" id="mType" value="BREAKDOWN">
       </div>
       <div class="form-group">
         <label>ผู้รับผิดชอบ</label>
@@ -827,15 +900,12 @@ function openRepairModal(repairId) {
         </div>
         <div class="form-group">
           <label>หมายเหตุ</label>
-          <input type="text" id="mRemark" class="form-control">
+          <input type="text" id="mRemark" class="form-control" placeholder="เหตุผล / รายละเอียดเพิ่มเติม">
         </div>
       </div>
     `;
     btn.textContent = '✅ รับงาน';
     btn.onclick = () => acceptRepairAdvanced(repairId);
-    document.getElementById('mType').addEventListener('change', function() {
-      document.getElementById('waitingBox').style.display = this.value === 'WAITING' ? 'block' : 'none';
-    });
   } else {
     document.getElementById('repairModalBody').innerHTML = `
       <div class="form-group"><label>สาเหตุการเกิด</label><textarea class="form-control" id="mRootCause" rows="2"></textarea></div>
@@ -860,6 +930,18 @@ function openRepairModal(repairId) {
   }
 
   document.getElementById('repairModal').classList.add('show');
+}
+
+// เลือก breakdown type button
+function selectBtype(el) {
+  const type = el.dataset.type;
+  document.querySelectorAll('.btype-btn').forEach(b => {
+    b.className = 'btype-btn'; // reset
+  });
+  el.classList.add('selected-' + type);
+  document.getElementById('mType').value = type;
+  // แสดง/ซ่อน waitingBox
+  document.getElementById('waitingBox').style.display = (type === 'WAITING') ? 'block' : 'none';
 }
 
 async function acceptRepair(repairId) {
@@ -887,9 +969,9 @@ async function acceptRepair(repairId) {
 }
 
 async function acceptRepairAdvanced(repairId) {
-  const type = document.getElementById('mType').value;
+  const type     = document.getElementById('mType').value;
   const planDate = document.getElementById('mPlanDate')?.value || '';
-  const remark = document.getElementById('mRemark')?.value || '';
+  const remark   = document.getElementById('mRemark')?.value || '';
   const assignee = document.getElementById('mAssignee')?.value || currentUser.username;
 
   if (type === 'WAITING' && !planDate) {
@@ -897,16 +979,19 @@ async function acceptRepairAdvanced(repairId) {
     return;
   }
 
+  // REPAIRING = IN_PROGRESS, BREAKDOWN = IN_PROGRESS, WAITING = PENDING
+  const status = (type === 'WAITING') ? 'PENDING' : 'IN_PROGRESS';
+
   try {
     const res = await api({
-      action: 'updateRepair',
-      repairId: repairId,
-      status: 'IN_PROGRESS',
+      action:        'updateRepair',
+      repairId:      repairId,
+      status:        status,
       breakdownType: type,
-      planDate: planDate,
-      remark: remark,
-      receivedBy: currentUser.username,
-      assignee: assignee
+      planDate:      planDate,
+      remark:        remark,
+      receivedBy:    currentUser.username,
+      assignee:      assignee
     });
 
     if (res.success) {
@@ -1162,6 +1247,9 @@ async function loadHistory() {
   const res = await api({ action: 'getRepairs' });
   if (!res.success) return;
 
+  // เก็บ allRepairsData ไว้ใช้กับ Top Breakdown filter
+  window._allRepairsData = res.data || [];
+
   let data = (res.data || []).filter(x => x.STATUS === 'DONE');
 
   // ===== KPI =====
@@ -1194,6 +1282,10 @@ async function loadHistory() {
   document.getElementById('kpiDowntime').textContent = totalDowntime.toFixed(2);
   document.getElementById('kpiAvailability').textContent = availability.toFixed(2);
 
+  // ===== TOP BREAKDOWN =====
+  renderTopBreakdown(window._topBdFilter || 'all');
+  renderTopDowntime(window._topDtFilter || 'all');
+
   // ===== เดิม =====
   const bookMap = {};
   data.forEach(r => {
@@ -1219,6 +1311,85 @@ async function loadHistory() {
     : 'ไม่มีประวัติ';
 
   renderHistoryCharts(data);
+}
+
+// ===== TOP BREAKDOWN FILTERS =====
+window._topBdFilter = 'all';
+window._topDtFilter = 'all';
+
+function setTopBdFilter(mode, btn) {
+  window._topBdFilter = mode;
+  document.querySelectorAll('#topBdFilter .top-bd-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTopBreakdown(mode);
+}
+function setTopDtFilter(mode, btn) {
+  window._topDtFilter = mode;
+  document.querySelectorAll('#topDtFilter .top-bd-filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderTopDowntime(mode);
+}
+
+function filterByMonth(data) {
+  const now = new Date();
+  const ym  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  return data.filter(r => {
+    if (!r.FINISH_TIME) return false;
+    const d = new Date(r.FINISH_TIME);
+    return !isNaN(d) && `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` === ym;
+  });
+}
+
+function renderTopBreakdown(mode) {
+  const el = document.getElementById('topBdList');
+  if (!el) return;
+  let data = (window._allRepairsData || []).filter(r => r.STATUS === 'DONE' && r.BREAKDOWN_TYPE === 'BREAKDOWN');
+  if (mode === 'month') data = filterByMonth(data);
+
+  const countMap = {};
+  data.forEach(r => { countMap[r.MACHINE_ID] = (countMap[r.MACHINE_ID] || 0) + 1; });
+
+  const sorted = Object.entries(countMap).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (!sorted.length) { el.innerHTML = '<p class="empty-msg" style="padding:12px 0">ยังไม่มีข้อมูล Breakdown</p>'; return; }
+
+  const max = sorted[0][1];
+  const rankColors = ['#ffd700','#c0c0c0','#cd7f32','#888','#888'];
+  el.innerHTML = sorted.map(([mc, cnt], i) => {
+    const m = machines.find(x => x.MACHINE_ID === mc);
+    const pct = Math.round((cnt/max)*100);
+    return `<div class="top-bd-row">
+      <div class="top-bd-rank r${i+1}" style="color:${rankColors[i]}">${i+1}</div>
+      <div class="top-bd-mc"><div>${mc}</div><div class="top-bd-mc-name">${m?.MACHINE_NAME||''}</div></div>
+      <div class="top-bd-bar-wrap"><div class="top-bd-bar" style="width:${pct}%;background:#ef5350"></div></div>
+      <div class="top-bd-val" style="color:#ef5350">${cnt} ครั้ง</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTopDowntime(mode) {
+  const el = document.getElementById('topDtList');
+  if (!el) return;
+  let data = (window._allRepairsData || []).filter(r => r.STATUS === 'DONE');
+  if (mode === 'month') data = filterByMonth(data);
+
+  const dtMap = {};
+  data.forEach(r => { dtMap[r.MACHINE_ID] = (dtMap[r.MACHINE_ID] || 0) + (+r.DOWNTIME || 0); });
+
+  const sorted = Object.entries(dtMap).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (!sorted.length) { el.innerHTML = '<p class="empty-msg" style="padding:12px 0">ยังไม่มีข้อมูล Downtime</p>'; return; }
+
+  const max = sorted[0][1];
+  const rankColors = ['#ffd700','#c0c0c0','#cd7f32','#888','#888'];
+  el.innerHTML = sorted.map(([mc, dt], i) => {
+    const m = machines.find(x => x.MACHINE_ID === mc);
+    const pct = Math.round((dt/max)*100);
+    return `<div class="top-bd-row">
+      <div class="top-bd-rank" style="color:${rankColors[i]}">${i+1}</div>
+      <div class="top-bd-mc"><div>${mc}</div><div class="top-bd-mc-name">${m?.MACHINE_NAME||''}</div></div>
+      <div class="top-bd-bar-wrap"><div class="top-bd-bar" style="width:${pct}%;background:#ffa726"></div></div>
+      <div class="top-bd-val" style="color:#ffa726">${dt.toFixed(1)} ชม.</div>
+    </div>`;
+  }).join('');
 }
 function openRepairDetail(r) {
   document.getElementById('repairDetailTitle').textContent = `รายละเอียดการซ่อม: ${r.REPAIR_ID}`;
@@ -1409,6 +1580,8 @@ async function api(data) {
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 function statusBadge(s) { return s==='PENDING'?'badge-pending':s==='IN_PROGRESS'?'badge-progress':s==='DONE'?'badge-ready':''; }
 function statusText(s)  { return s==='PENDING'?'รอซ่อม':s==='IN_PROGRESS'?'กำลังซ่อม':s==='DONE'?'เสร็จแล้ว':s; }
+function btypeBadge(t)  { return t==='BREAKDOWN'?'badge-breakdown':t==='WAITING'?'badge-waiting':t==='REPAIRING'?'badge-repairing':'badge-pending'; }
+function btypeText(t)   { return t==='BREAKDOWN'?'🔴 Breakdown':t==='WAITING'?'🟡 รอซ่อม':t==='REPAIRING'?'🔵 กำลังซ่อม':t||'-'; }
 function pmBadge(s)     { return s==='PLANNED'?'badge-pending':s==='CONFIRMED'?'badge-progress':s==='DONE'?'badge-ready':''; }
 function getMonthStr(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; }
 function formatDate(val) { if(!val) return '-'; const d=new Date(val); return isNaN(d)?val:d.toLocaleString('th-TH'); }
